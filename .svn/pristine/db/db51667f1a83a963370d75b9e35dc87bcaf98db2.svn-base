@@ -1,0 +1,60 @@
+# common — Shared resources
+
+This folder contains the shared infrastructure for all projects managed with m_AI_l.
+It is not a project — it is the backbone that all projects and threads rely on.
+
+The location of this folder is determined by ARO during initial setup.
+
+---
+
+## Getting started
+
+To set up a new project or invite a new thread, open a new Claude conversation and paste:
+
+```
+Execute [path to this folder]\skills\aro.md
+```
+
+Replace `[path to this folder]` with the actual path to your common folder (e.g. `C:\dev\common`).
+ARO will detect your language and guide you through the rest.
+
+---
+
+## Structure
+
+```
+common\
+├── README.md                        # This file
+├── common_conventions.md            # Local conventions for this installation
+├── projects_config.md               # Central registry of all active projects
+├── projects_config_archive.md       # Archive of completed or abandoned projects
+├── roster.md                        # Team roster for common threads
+└── skills\
+    ├── commun.md                    # m_AI_l discovery hub — read at session start
+    ├── m_AI_l_help.md               # m_AI_l user manual (all triggers)
+    ├── mailbox_read.md              # Read and archive messages  (MAIL!, MSG?)
+    ├── mailbox_write.md             # Send messages  (SEND?, SEND!, SEND! HANDLE)
+    ├── mailbox_init.md              # Initialization utility (called by onboarding)
+    ├── onboarding.md                # Invite a new or existing thread
+    ├── briefing.md                  # Self-integration for an existing thread
+    ├── renew.md                     # Replace a saturating or crashed thread
+    ├── add_project.md               # Register a new project
+    └── aro.md                       # Onboarding agent for new users
+```
+
+---
+
+## Local conventions
+
+This installation has a set of local conventions (session modes, navigation rules, etc.)
+documented in `common_conventions.md`. New threads load this file automatically at startup.
+
+If you are setting up a new installation, you can adapt or replace `common_conventions.md`
+to match your own conventions — it is not distributed and will not be overwritten by updates.
+
+---
+
+## Projects
+
+Active projects and their paths are tracked in `projects_config.md`.
+This is the single source of truth for project locations and status.

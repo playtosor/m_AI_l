@@ -1,0 +1,13 @@
+@echo off
+echo === Suppression .git dans C:\dev ===
+
+for /d /r "C:\dev" %%D in (.git) do (
+    if exist "%%D" (
+        echo Suppression : %%D
+        rd /s /q "%%D"
+    )
+)
+
+echo.
+echo === Done ===
+pause

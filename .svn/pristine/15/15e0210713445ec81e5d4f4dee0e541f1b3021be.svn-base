@@ -1,0 +1,16 @@
+@echo off
+echo === Suppression des dossiers .svn dans C:\dev ===
+echo ATTENTION : operation irreversible !
+echo.
+pause
+
+for /d /r "C:\dev" %%D in (.svn) do (
+    if exist "%%D" (
+        echo Suppression : %%D
+        rd /s /q "%%D"
+    )
+)
+
+echo.
+echo === Termine ===
+pause

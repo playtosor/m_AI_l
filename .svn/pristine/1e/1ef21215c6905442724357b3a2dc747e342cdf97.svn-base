@@ -1,0 +1,154 @@
+@echo off
+setlocal enabledelayedexpansion
+
+:: ==========================================
+:: CONFIGURATION GENERALE
+:: ==========================================
+set "REPO_PATH=C:\dev\svnmaster"
+set "ZIP_EXE=C:\utilitaires\7-Zip\7z.exe"
+set "DEST_DIR=C:\dev\sauvegardes"
+set "RCLONE_EXE=C:\utilitaires\rclone\rclone.exe"
+set "REMOTE_DIR=gdrive:BackupsSVN"
+set "RETENTION_DAYS=30"
+
+:: Mot de passe lu depuis un fichier externe (non versionne)
+set "SECRET_FILE=C:\dev\environement\backup_svn_secret.txt"
+if not exist "!SECRET_FILE!" (
+    echo [ERREUR] Fichier de mot de passe introuvable : !SECRET_FILE!
+    echo Creez ce fichier et placez-y le mot de passe sur la premiere ligne.
+    pause
+    exit /b 1
+)
+set /p PASSWORD=<"!SECRET_FILE!"
+if "!PASSWORD!"=="" (
+    echo [ERREUR] Le fichier de mot de passe est vide.
+    pause
+    exit /b 1
+)
+
+:: ==========================================
+:: VERIFICATION : backup deja fait aujourd'hui ?
+:: ==========================================
+for /f "tokens=2 delims==" %%G in ('wmic os get localdatetime /value') do set datetime=%%G
+set "TODAY=!datetime:~6,2!_!datetime:~4,2!_!datetime:~0,4!"
+
+for /f "tokens=*" %%f in ('dir /b /o-d "%DEST_DIR%\*.7z" 2^>nul') do (
+    set "LASTNAME=%%f"
+    goto :check
+)
+goto :proceed
+
+:check
+:: Le nom du fichier commence par JJ_MM_AAAA
+set "FILEDATE=!LASTNAME:~0,10!"
+if "!FILEDATE!"=="!TODAY!" (
+    echo [INFO] Backup deja effectue aujourd'hui ^(!TODAY!^). Aucune action necessaire.
+    exit /b 0
+)
+
+:proceed
+
+:: ==========================================
+:: CALCUL DE LA DATE ET HEURE (JJ_MM_AAAA_HHMM)
+:: ==========================================
+for /f "tokens=2 delims==" %%G in ('wmic os get localdatetime /value') do set datetime=%%G
+set "DAY=!datetime:~6,2!"
+set "MONTH=!datetime:~4,2!"
+set "YEAR=!datetime:~0,4!"
+set "HOUR=!datetime:~8,2!"
+set "MIN=!datetime:~10,2!"
+set "FILENAME=!DAY!_!MONTH!_!YEAR!_!HOUR!!MIN!_repo.7z"
+
+:: ==========================================
+:: VERIFICATIONS PREALABLES
+:: ==========================================
+echo.
+echo ---------------------------------------------------------
+echo  Sauvegarde du depot SVN
+echo  Date     : !DAY!/!MONTH!/!YEAR! !HOUR!:!MIN!
+echo  Source   : %REPO_PATH%
+echo  Cible    : %DEST_DIR%\!FILENAME!
+echo  Remote   : %REMOTE_DIR%
+echo ---------------------------------------------------------
+echo.
+
+if not exist "%REPO_PATH%" (
+    echo [ERREUR] Dossier source introuvable : %REPO_PATH%
+    pause
+    exit /b 1
+)
+
+if not exist "%ZIP_EXE%" (
+    echo [ERREUR] 7-Zip introuvable : %ZIP_EXE%
+    pause
+    exit /b 1
+)
+
+if not exist "%RCLONE_EXE%" (
+    echo [ERREUR] rclone introuvable : %RCLONE_EXE%
+    pause
+    exit /b 1
+)
+
+if not exist "%DEST_DIR%" (
+    echo [INFO] Creation du dossier de destination...
+    mkdir "%DEST_DIR%"
+    if !ERRORLEVEL! NEQ 0 (
+        echo [ERREUR] Impossible de creer le dossier : %DEST_DIR%
+        pause
+        exit /b 1
+    )
+)
+
+:: ==========================================
+:: COMPRESSION
+:: ==========================================
+echo [1/3] Compression en cours...
+"%ZIP_EXE%" a "-p!PASSWORD!" -mhe=on -mx9 "%DEST_DIR%\!FILENAME!" "%REPO_PATH%"
+set "ERR=!ERRORLEVEL!"
+if !ERR! NEQ 0 (
+    echo [ERREUR] Echec de la compression ^(Code: !ERR!^)
+    pause
+    exit /b 1
+)
+echo [SUCCES] Archive creee : %DEST_DIR%\!FILENAME!
+
+:: ==========================================
+:: UPLOAD VERS GOOGLE DRIVE
+:: ==========================================
+echo.
+echo [2/3] Upload vers Google Drive...
+"%RCLONE_EXE%" copy "%DEST_DIR%\!FILENAME!" "%REMOTE_DIR%" --checksum
+set "ERR=!ERRORLEVEL!"
+if !ERR! NEQ 0 (
+    echo [ERREUR] Echec de l'upload ^(Code: !ERR!^)
+    pause
+    exit /b 1
+)
+echo [SUCCES] Upload termine : %REMOTE_DIR%/!FILENAME!
+
+:: ==========================================
+:: ROTATION DES ANCIENNES SAUVEGARDES
+:: ==========================================
+echo.
+echo [3/3] Nettoyage des sauvegardes de plus de %RETENTION_DAYS% jours...
+forfiles /p "%DEST_DIR%" /m "*.7z" /d -%RETENTION_DAYS% /c "cmd /c echo Suppression : @path && del @path" 2>nul
+if !ERRORLEVEL! NEQ 0 (
+    echo [INFO] Aucun fichier a supprimer ou dossier vide.
+)
+echo [SUCCES] Nettoyage termine.
+
+:: ==========================================
+:: FIN
+:: ==========================================
+echo.
+echo ---------------------------------------------------------
+echo  Sauvegarde terminee avec succes.
+echo  Archive : %DEST_DIR%\!FILENAME!
+echo ---------------------------------------------------------
+echo.
+
+:: Si appele depuis commit.bat, ne pas faire de pause
+if "%1"=="silent" exit /b 0
+pause
+exit /b 0

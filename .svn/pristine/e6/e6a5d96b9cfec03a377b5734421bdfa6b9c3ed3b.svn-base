@@ -1,0 +1,121 @@
+# Architecture — Évolution du système de skills common
+*Document de travail — COMMON — 20260304*
+
+---
+
+## Contexte
+
+Le système de messagerie inter-fils est validé en production (atornai). L'objectif de cette évolution est de rendre le système **portable et accessible aux nouveaux utilisateurs**, via un agent d'accueil (ARO) et une configuration centralisée des projets.
+
+---
+
+## Nouveau fichier central : `projects_config.md`
+
+Source de vérité unique pour les chemins de tous les projets de l'utilisateur.
+
+**Emplacement :** `[common]/projects_config.md`
+
+**Format :**
+```
+| Handle projet | Chemin absolu          | Roster                           | Status |
+|---------------|------------------------|----------------------------------|--------|
+| COMMON        | C:\dev\common          | C:\dev\common\roster.md          | active |
+| ATORNAI       | C:\dev\atornai         | C:\dev\atornai\roster.md         | active |
+| MAZE          | C:\dev\labyFlecheReact | C:\dev\labyFlecheReact\roster.md | active |
+```
+
+**Créé par :** ARO au premier lancement  
+**Enrichi par :** `add_project.md` à chaque nouveau projet  
+**Consulté par :** `onboarding.md`, `renew.md`, et tout skill qui génère un template d'amorçage
+
+**Archivage :** les projets terminés ou abandonnés sont déplacés dans `projects_config_archive.md` (fichier séparé) avec date et raison — pour garder le fichier principal court et lisible.
+
+---
+
+## Nouveau skill : `aro.md`
+
+**Rôle :** point d'entrée convivial pour les nouveaux utilisateurs. Surcouche guidée autour des skills existants.
+
+**Nature :** skill direct (déclenché par l'utilisateur)  
+**Handle recommandé :** ARO  
+**Mailbox :** dans `[common]` — ARO est transverse, pas lié à un projet
+
+**Flow :**
+1. Se présente et explique le système en termes simples
+2. Demande le chemin du dossier `common`
+3. Crée `projets_config.md` avec l'entrée COMMON
+4. Enregistre ARO dans `roster.md` de common (via `mailbox_init.md`)
+5. Accompagne la création du premier projet (appelle `add_project.md`)
+6. Génère le template d'amorçage ARO pour les sessions suivantes
+
+**Flexibilité :** ARO peut être permanent (renouvelé via `renew.md`) ou utilisé ponctuellement — au choix de l'utilisateur. Ce n'est pas un gardien obligatoire.
+
+---
+
+## Nouveau skill utilitaire : `add_project.md`
+
+**Rôle :** enregistrer un nouveau projet dans `projets_config.md` et initialiser sa structure de messagerie.
+
+**Nature :** utilitaire (appelé par ARO, COMMON, ou directement par un utilisateur avancé)
+
+**Flow :**
+1. Demande : nom du projet, chemin absolu
+2. Ajoute une entrée dans `projets_config.md`
+3. Crée `roster.md` dans le dossier projet (avec HUMAN par défaut)
+4. Crée les fichiers de messagerie HUMAN (`mailbox_HUMAN.md`, `_archive.md`, `outbox_HUMAN.md`)
+5. Confirme et propose d'enchaîner avec `onboarding.md` pour inviter les premiers fils
+
+---
+
+## Skills mis à jour : `onboarding.md` et `renew.md`
+
+Les templates d'amorçage actuels ont les chemins en dur. Avec `projets_config.md` :
+
+- Étape de génération du template (étape 5 pour onboarding, étape 3 pour renew) :  
+  → Lire `projets_config.md` pour récupérer le chemin du projet concerné  
+  → Injecter les chemins réels dans le template au lieu de `[PROJECT]`
+
+**Rétrocompatibilité :** si `projets_config.md` n'existe pas (setup manuel, utilisateur avancé), les skills continuent de fonctionner avec les placeholders `[PROJECT]` — l'utilisateur remplace manuellement. Pas de blocage.
+
+---
+
+## Vue d'ensemble des skills après évolution
+
+| Skill | Nature | Appelé par |
+|-------|--------|------------|
+| `aro.md` | Direct | Utilisateur (novice) |
+| `add_project.md` | Utilitaire | ARO, COMMON, utilisateur avancé |
+| `onboarding.md` | Direct | N'importe quel fil |
+| `renew.md` | Direct | Fil sortant ou substitut |
+| `briefing.md` | Direct | Fil existant (auto-intégration) |
+| `mailbox_init.md` | Utilitaire | onboarding, briefing |
+| `mailbox_read.md` | Direct | Tout fil (MAIL!) |
+| `mailbox_write.md` | Direct | Tout fil (SEND?) |
+| `skill_launch.md` | Direct | N'importe quel fil |
+
+---
+
+## Ce qui ne change pas
+
+- Architecture mailboxes distribuées dans chaque projet — validée, pas touchée
+- **Mailbox HUMAN unique dans common** — `C:\dev\common\mailbox_HUMAN.md` est la seule mailbox HUMAN. Les rosters des projets y pointent, aucun fichier HUMAN n'est créé dans les dossiers projet.
+- Format des messages — inchangé
+- `roster.md` par projet — inchangé
+- `commun.md`, `README.md`, `ETAT_ACTUEL.md` — mis à jour après implémentation
+
+---
+
+## Ordre d'implémentation
+
+1. `add_project.md` — utilitaire de base, peu de dépendances
+2. Créer `projects_config.md` pour le setup actuel (common, atornai, labyFlecheReact)
+3. Mettre à jour `commun.md`, `README.md`, `ETAT_ACTUEL.md` — snapshot stable avant les modifications risquées
+4. Mettre à jour `onboarding.md` et `renew.md` — consultation `projects_config.md` + test réel sur MKT
+5. `aro.md` — en dernier, quand toute la base est solide et testée
+
+---
+
+## Questions ouvertes
+
+- ARO doit-il avoir un skill de "diagnostic" pour aider un utilisateur dont le setup est cassé ?
+- Convention `SELF//` : voir pistes d'amélioration dans `renew.md` — tag `CLOSED`, numérotation de génération, `PREC//`/`NEXT//` à évaluer en v2 selon les besoins réels en production.

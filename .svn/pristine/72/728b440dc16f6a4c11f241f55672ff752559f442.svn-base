@@ -1,0 +1,30 @@
+# Bonnes pratiques de développement
+
+## Gestion des fichiers .env
+
+- [ ] Stocker tous les `.env` dans `C:\dev\environnement\` (ex: `projet1.env`, `projet2.env`)
+- [ ] Ne jamais donner accès à `C:\dev\environnement\` dans les discussions ou skills
+- [ ] Communiquer uniquement le chemin du fichier concerné à la discussion de dev
+- [ ] Vérifier que `C:\dev\environnement\` n'est pas dans un dossier accessible via un skill
+
+## Avant migration vers un dépôt distant
+
+- [ ] Vérifier que `.env` est bien dans `.svnignore`
+- [ ] Externaliser les fichiers `.env` hors du dossier projet (ex: `C:\dev\environnement\`)
+- [ ] Demander à la discussion de dev de mettre à jour le chemin des `.env`
+
+## Base de données (Supabase)
+
+- [ ] Préfixer toutes les tables avec le nom du projet (ex: `maze_users`, `puzzle_settings`)
+
+## Conventions générales
+
+- [ ] Ne jamais commiter un état instable sans tag `[WIP]`
+- [ ] Regrouper les modifications par lot logique avant de proposer un commit
+
+## Navigation dans les dossiers projet
+
+- [ ] Ne jamais explorer librement un dossier projet — lister uniquement la structure de premier niveau
+- [ ] Ne jamais lire `node_modules\`, `dist\`, `build\`, `.svn\` ou tout dossier généré
+- [ ] Cibler uniquement les fichiers explicitement nécessaires
+- [ ] En cas de doute sur un fichier à lire, demander confirmation à l'utilisateur

@@ -1,0 +1,87 @@
+# Common — État actuel
+
+> Ressources communes disponibles dans C:\dev\common\ (README, bonnes pratiques, skills)
+> Historique des modifications : voir `ETAT_ACTUEL_archive.md`
+
+## Rôle de ce fil
+Architecte transverse — conception et évolution de l'infrastructure commune à tous les projets de `C:\dev\`. Ce fil ne touche pas au code des projets individuels.
+
+## Contexte du projet
+`C:\dev\common\` est la couche d'infrastructure partagée : skills globaux, conventions, bonnes pratiques. Un système de messagerie inter-fils asynchrone (m_AI_l) est opérationnel et validé en production.
+
+## Productions — état actuel des fichiers
+
+### Skills messagerie
+- `skills\mailbox_init.md` — initialisation d'une mailbox (appelé par onboarding)
+- `skills\mailbox_read.md` — lecture et archivage des messages (triggers : MAIL!, MSG?, HELP!, PRUNE!)
+- `skills\mailbox_write.md` — envoi et annulation de messages (triggers : SEND?, SEND!, SEND! HANDLE)
+- `skills\onboarding.md` — intégration d'un fil nouveau ou existant (v2 : template d'amorçage généré à l'étape 5)
+- `skills\renew.md` — remplacement d'un fil saturé ou planté (triggers : RENEW?, RENEW!)
+- `skills\aro.md` — agent d'accueil nouveaux utilisateurs
+- `skills\prune.md` — garbage collection des archives (trigger : PRUNE!, thread single-use)
+- `skills\add_project.md` — enregistrement d'un projet dans `projects_config.md`
+
+### Skills transversaux
+- `skills\commun.md` — hub m_AI_l générique (lu au démarrage de chaque session)
+- `skills\m_AI_l_help.md` — manuel utilisateur m_AI_l
+
+### Fichiers de configuration
+- `projects_config.md` — source de vérité des chemins projets actifs
+- `projects_config_archive.md` — projets terminés/abandonnés
+- `roster.md` — membres de l'équipe common (HUMAN, COMMON, BAT, MKT, TST, ARO)
+- `common_conventions.md` — conventions locales C:\dev\ (ignoré par GitHub)
+- `INTERNAL.md` — documentation interne, template d'amorçage standard
+
+### Scripts
+- `scripts\prune_scan.js` — scanner Node pour inspection des archives avant PRUNE (utilisable manuellement)
+
+## Upgrade projets
+- **atornai** ✅ — roster initialisé, HUMAN + ARCHI + DEV onboardés, PROMPT en cours
+- **labyFlecheReact** ⏳ — à faire lors d'une prochaine session
+- **SKILLDOCU** ✅ — projet créé, fil PKG onboardé, CDC rédigé, audit m_AI_l complet effectué
+
+## Conventions établies
+- Handle : identifiant court sans espaces (ex : ARCHI, BAT, COMMON)
+- Roster : `roster.md` par projet — créé automatiquement au premier enregistrement
+- Format message : `HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body`
+- Annulation : `HANDLE // YYYYMMDD-HHMM // L // ANNULS:TIMESTAMP_CIBLE // n/a`
+- Chemins relatifs dans les skills (GitHub-ready)
+- `MAIL!` en début de message déclenche `mailbox_read` immédiatement
+- `SEND?` déclenche une réflexion sur ce qui vaut la peine d'être communiqué
+- `M!` en début de message = mode mobile (réponses courtes, pas d'actions fichiers)
+- `C!` — retour ordinateur : annule le mode M!, toutes les actions fichiers redeviennent disponibles
+- Mailboxes distribuées dans chaque projet (pas centralisées) — décision architecturale actée
+- Les nouveaux fils lisent les rosters projet + common pour connaître leur équipe
+- Mailbox HUMAN unique dans common — jamais recréée dans les dossiers projet
+- Handle de fil (ex: ARCHI) ≠ handle de projet (ex: LABYFLECHE) — deux espaces de nommage distincts
+- `ETAT_ACTUEL.md` reste en français pour la v1 — migration possible en v2
+- Confidentialité mailboxes : convention "ne pas traiter le contenu existant" documentée dans `mailbox_write.md`
+- `commun.md` séparé de `common_conventions.md` — hub m_AI_l générique vs conventions locales installées
+
+## Template d'amorçage standard (v2 — généré par onboarding.md étape 5)
+```
+Read C:\dev\common\INTERNAL.md then C:\dev\common\skills\commun.md then C:\dev\[PROJECT]\ETAT_ACTUEL.md.
+You are [HANDLE], [ROLE] in C:\dev\[PROJECT]\
+Your handle is [HANDLE]. Your mailbox is C:\dev\[PROJECT]\mailbox_[HANDLE].md.
+Read C:\dev\[PROJECT]\roster.md and C:\dev\common\roster.md to know your team.
+Read now: C:\dev\common\skills\mailbox_read.md
+Read also: C:\dev\common\skills\m_AI_l_help.md
+Then send MAIL! to read your first messages.
+To contact a team member, use mailbox_write.md — do not reply in chat.
+```
+
+> Note : le template français de l'ancienne version reste valide pour les fils francophones.
+
+## À ne pas faire
+- Toucher au code des projets individuels
+- Modifier les `.env` ou accéder à `C:\dev\environnement\`
+- Explorer librement les dossiers projet — voir règle dans commun.md
+- Lire `node_modules\`, `dist\`, `build\` ou tout dossier généré
+
+## Prochaines étapes
+1. Upgrader labyFlecheReact — projet relancé (fil unique pour l'instant), intégration m_AI_l à faire
+2. À terme : explorer un serveur MCP Python pour `write_mail` (atomicité, moins de tokens)
+3. Pour la 1.1 : utiliser le script prune_scan.js pour prune beaucoup plus efficient
+
+## État
+STABLE — système de messagerie opérationnel et validé en production (atornai)

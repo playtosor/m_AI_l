@@ -1,0 +1,2 @@
+@echo off
+call "C:\dev\common\scripts\commit.bat"

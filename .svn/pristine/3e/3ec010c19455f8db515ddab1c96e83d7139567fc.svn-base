@@ -1,0 +1,18 @@
+@echo off
+echo === Revert + suppression node_modules ===
+
+svn revert -R "C:\dev"
+
+echo.
+echo === Suppression node_modules ===
+
+for /d /r "C:\dev" %%D in (node_modules) do (
+    if exist "%%D" (
+        echo Suppression : %%D
+        rd /s /q "%%D"
+    )
+)
+
+echo.
+echo === Done ===
+pause

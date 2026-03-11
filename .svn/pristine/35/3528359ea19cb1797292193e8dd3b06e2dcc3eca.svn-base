@@ -1,0 +1,192 @@
+# PRUNE_REPORT.md
+*Rapport de session — 10 mars 2026*
+
+---
+
+## 1. Contexte
+
+Ce rapport documente les modifications apportées au skill `prune.md` lors de la session du 10 mars 2026, ainsi que les réflexions sur les risques de saturation de contexte et les pistes d'optimisation futures.
+
+PRUNE est un agent de garbage collection pour les fichiers de messagerie m_AI_l. Il tourne dans un thread Claude dédié, single-use, sans mailbox ni entrée dans le roster. Son rôle : déplacer les entrées anciennes des archives et outboxes vers un dossier `pruned/`, projet par projet, avec validation utilisateur à chaque étape.
+
+---
+
+## 2. Modifications apportées à prune.md
+
+### 2.1 Avant : section 3a d'origine
+
+La procédure d'inspection originale était minimaliste :
+
+> *"Scan the project folder for files in scope. For each file found, count total entries, entries older than the retention window, entries within the window."*
+
+Aucune instruction sur **comment** lire les fichiers. En pratique, cela conduisait PRUNE à charger l'intégralité du contenu de chaque fichier en mémoire de contexte — même pour des fichiers dont toutes les entrées sont récentes.
+
+### 2.2 Après : stratégie en quatre étapes (a0 → a3)
+
+La section 3a a été remplacée par une procédure explicite et graduée, conçue pour minimiser la consommation de contexte.
+
+---
+
+**a0 — Vérification de taille (avant toute lecture)**
+
+Utilise `get_file_info` pour obtenir la taille du fichier sans en lire le contenu.
+
+- Si le fichier dépasse **20kb** : archivage immédiat, sans lecture. L'utilisateur est informé explicitement que le fichier est trop volumineux pour être lu sans risquer la saturation du contexte, et qu'il sera déplacé en totalité vers `pruned/`. Il peut contenir des entrées récentes — ce cas est assumé et expliqué.
+- Sinon : passer à a1.
+
+*Justification du seuil 20kb :* avec jusqu'à 10 fichiers en scope par projet, 10 × 20kb = 200kb de texte, soit environ la moitié d'un contexte Sonnet en pratique. Au-delà, la phase d'inspection elle-même devient le problème.
+
+---
+
+**a1 — Lecture tail (éligibilité rapide)**
+
+Lit les **5 dernières lignes** du fichier (`tail: 5`).
+
+Cas traités :
+- Fichier vide ou sans entrées datées → skip silencieux.
+- Lignes retournées mais sans pattern de date `YYYYMMDD-HHMM` → probable corps d'un message long → élargissement progressif du tail (20, puis 30 lignes) jusqu'à trouver un en-tête daté. Si toujours rien après 30 lignes : lecture complète du fichier pour éviter de rater silencieusement des entrées anciennes.
+- Entrée la plus récente **antérieure** à la fenêtre de rétention → tout le fichier est à déplacer, pas besoin d'aller plus loin.
+- Entrée la plus récente **dans** la fenêtre → le fichier peut contenir des entrées anciennes en tête → passer à a2.
+
+*Correction notable :* la version initiale de cette étape ne gérait pas le cas "pas de date dans le tail", ce qui aurait conduit à ignorer silencieusement des fichiers contenant des messages longs — exactement le type de fichier le plus susceptible d'être volumineux et donc prioritaire pour la purge.
+
+---
+
+**a2 — Lecture head (recherche de la ligne de coupure)**
+
+Lit les **20 premières lignes** du fichier (`head: 20`).
+
+- Si toutes les entrées de cet échantillon sont dans la fenêtre : rien à déplacer → skip silencieux.
+- Si la ligne de coupure est trouvée dans cet échantillon : position notée → passer à a3.
+- Si toutes les entrées de l'échantillon sont antérieures à la fenêtre : la coupure est plus profonde → lecture complète du fichier pour la localiser précisément.
+
+---
+
+**a3 — Comptage**
+
+À partir des informations collectées en a1 et a2, déterminer le nombre d'entrées à déplacer et à conserver. Lecture complète uniquement si les étapes précédentes n'ont pas suffi à établir un compte fiable.
+
+---
+
+### 2.3 Pré-condition documentée
+
+La stratégie repose sur le fait que les entrées sont stockées en **ordre chronologique** (les plus anciennes en tête de fichier). Cette convention est standard dans m_AI_l mais n'était pas documentée dans `prune.md` — elle l'est désormais explicitement, car toute la logique de la stratégie en dépend.
+
+---
+
+## 3. Risques de saturation de contexte
+
+### 3.1 Le paradoxe central
+
+PRUNE est le plus utile quand les archives sont volumineuses. Mais c'est précisément dans ce cas qu'il risque de saturer son propre contexte en essayant de les lire pour décider quoi couper. Sans précautions, l'agent de nettoyage serait paralysé par l'accumulation qu'il est censé résoudre.
+
+### 3.2 Ce qui consomme du contexte
+
+| Opération | Impact contexte | Fréquence |
+|---|---|---|
+| `get_file_info` | Négligeable | 1× par fichier |
+| `tail: 5` | ~200 caractères | 1× par fichier |
+| `tail: 20-30` | ~1ko | Occasionnel |
+| `head: 20` | ~1ko | Fréquent |
+| Lecture complète | Taille du fichier | Exceptionnel |
+| Lecture batch multiple | Somme de tous les fichiers | **À éviter** |
+
+La session du 10 mars 2026 a utilisé `read_multiple_files` sur 12 fichiers simultanément — tout le contenu a atterri en contexte d'un coup. Avec les modifications actuelles, ce pattern est remplacé par des lectures graduées fichier par fichier.
+
+### 3.3 Scénario à surveiller
+
+Un projet avec de nombreux fichiers dont plusieurs ont grossi au-delà de 20kb. Avec la règle a0, ces fichiers sont court-circuités sans lecture. Sans cette règle, ils auraient pu saturer le contexte avant même d'atteindre le stade de la purge.
+
+---
+
+## 4. Optimisation possible : un script Node en bras exécutant
+
+### 4.1 Ce que Node ferait mieux que Claude
+
+La phase d'inspection (a0 → a3) est fondamentalement une opération de parsing de fichiers texte avec filtrage par date. C'est exactement ce que Node.js fait en quelques millisecondes avec `fs.readdir`, `fs.stat`, et un simple parcours de lignes — sans consommer aucun contexte LLM.
+
+Un script `prune_scan.js` pourrait :
+- Parcourir tous les projets listés dans `projects_config.md`
+- Vérifier la taille de chaque fichier en scope
+- Lire et parser les dates de chaque entrée
+- Produire un rapport JSON compact : `{ projet, fichier, entriesToMove, entriesToKeep, cutoffLine }`
+
+Ce rapport JSON, léger par nature, serait ensuite transmis à PRUNE qui n'aurait plus qu'à le lire, interagir avec l'utilisateur, et piloter l'exécution.
+
+### 4.1b prune_scan.js — implémenté en session
+
+Le script a été écrit et validé lors de cette session. Il est disponible dans `C:\dev\common\scripts\prune_scan.js`.
+
+**Usage :**
+```
+node C:\dev\common\scripts\prune_scan.js
+node C:\dev\common\scripts\prune_scan.js --days 60
+node C:\dev\common\scripts\prune_scan.js --days 30 --common C:\dev\common --size-limit 20
+```
+
+**Ce qu'il fait :**
+- Lit `projects_config.md` pour obtenir la liste des projets actifs
+- Pour chaque projet, scanne les fichiers en scope (`mailbox_*_archive.md`, `outbox_*.md`)
+- Applique la logique a0 (taille) puis parse toutes les dates de chaque fichier
+- Produit une sortie console résumée (✅ propre / ⚠️ entrées à déplacer / ❌ erreur)
+- Écrit `prune_scan_report.json` dans `C:\dev\common\` avec le détail complet : nombre d'entrées à déplacer/conserver, ligne de coupure exacte, flag pour fichiers surdimensionnés
+
+**Ce qu'il ne fait pas :** il ne déplace rien. C'est un scanner pur — l'exécution reste dans les mains de PRUNE, conformément au principe de validation interactive du skill.
+
+**Tests :** cinq tests unitaires validés en session (isInScope, parseMailDate, extractEntryHeaders, logique de coupure, cas mixte ancien/récent).
+
+**Statut V1 :** le script est autonome et utilisable manuellement dès maintenant (`node prune_scan.js` avant d'ouvrir un thread PRUNE). L'intégration automatique via MCP reste une évolution V2.
+
+### 4.2 Ce que Claude conserverait
+
+- La lecture de `projects_config.md` pour obtenir la liste des projets
+- L'interaction utilisateur (confirmation par projet, gestion des cas limites, décisions de jugement)
+- La gestion des cas imprévus (format inhabituel, fichier corrompu, ambiguïté)
+- La rédaction du rapport final
+
+### 4.3 Pourquoi ce n'est pas une priorité en V1
+
+Cette architecture nécessiterait un MCP dédié (`prune_mcp`) pour que Claude puisse déclencher l'exécution du script sans intervention manuelle de l'utilisateur. Or, installer un MCP supplémentaire implique de modifier `claude_desktop_config.json` — une barrière non négligeable pour un public non-développeur.
+
+La stratégie de lecture graduée (a0 → a3) implémentée dans cette session apporte l'essentiel du gain de performance sans aucune dépendance supplémentaire. C'est le bon compromis pour une V1 grand public.
+
+### 4.4 Architecture cible pour une V2
+
+```
+prune_scan.js          → scan fichiers, parsing dates, rapport JSON
+       ↓
+prune_mcp (serveur)    → expose scan() comme tool MCP
+       ↓
+PRUNE thread (Claude)  → reçoit le rapport, interagit, pilote l'exécution
+```
+
+Le pattern existe déjà dans le stack avec `svn_mcp` — `prune_mcp` suivrait exactement le même modèle. La séparation des responsabilités serait propre : Node pour la mécanique, Claude pour le jugement et l'interaction.
+
+---
+
+## 5. Résumé des décisions de cette session
+
+| Décision | Justification |
+|---|---|
+| Seuil a0 fixé à 20kb | 10 fichiers × 20kb = ~200kb ≈ moitié du contexte Sonnet |
+| Tail progressif en a1 (5 → 20 → 30) | Gestion des messages longs sans date dans les dernières lignes |
+| Fallback lecture complète si tail:30 sans date | Ne jamais rater silencieusement des entrées anciennes |
+| Pré-condition ordre chronologique documentée | Toute la stratégie en dépend — doit être explicite |
+| Script Node reporté en V2 (MCP) | Nécessite un MCP supplémentaire, incompatible avec cible non-dev V1 |
+| prune_scan.js écrit et validé | Utilisable manuellement dès maintenant, scanner pur sans exécution |
+
+---
+
+## 6. Lacunes identifiées — ajustements V1.1 à traiter
+
+Trois incohérences entre la nouvelle section 3a (inspection) et le reste du skill, à corriger dans une session ultérieure :
+
+| # | Section concernée | Problème |
+|---|---|---|
+| 1 | **3c — Execute** ✅ | Deux cas distincts documentés : fichier surdimensionné (déplacement total + source vidée) vs coupure partielle (cut-off line issue de a2/a3). |
+| 2 | **3b — Report, cas a0** ✅ | Ligne "Oversized files (will be moved in full)" ajoutée au template de rapport — l'utilisateur voit les fichiers surdimensionnés avant de confirmer. |
+| 3 | **Rules — append** ✅ | Règle affinée : append pour coupures partielles, nouveau fichier horodaté pour fichiers surdimensionnés (évite l'accumulation dans pruned/). |
+
+---
+
+*Document mis à jour en session PRUNE — 10 mars 2026*

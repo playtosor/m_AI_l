@@ -1,0 +1,61 @@
+@echo off
+echo === Configuration svn:ignore nouveau depot ===
+
+REM --- Racine C:\dev ---
+(
+  echo *.zip
+  echo mailbox*
+  echo outbox*
+  echo sauvegardes
+  echo svnmaster
+  echo svnmaster_backup
+  echo svnmaster_rev93_backup
+  echo ARCHIVEs
+  echo SFML-2.5.1
+  echo OXCE
+  echo OXCNG DOCS
+  echo environement
+  echo LABY_CHRONOClaude1
+  echo devbackup
+  echo dev_corrupted
+) > "%TEMP%\root_ignore.txt"
+svn propset svn:ignore -F "%TEMP%\root_ignore.txt" "C:\dev"
+echo [OK] racine C:\dev
+
+REM --- common\scripts : ignorer venv ---
+svn propset svn:ignore "venv" "C:\dev\common\scripts"
+echo [OK] common\scripts
+
+REM --- Projets React/Node ---
+(
+  echo node_modules
+  echo dist
+  echo build
+  echo .next
+  echo .cache
+) > "%TEMP%\node_ignore.txt"
+
+svn propset svn:ignore -F "%TEMP%\node_ignore.txt" "C:\dev\labyFlecheReact"
+echo [OK] labyFlecheReact
+
+REM --- VillageBuilder si present ---
+if exist "C:\dev\VillageBuilder" (
+    (
+      echo .git
+      echo node_modules
+      echo dist
+      echo build
+    ) > "%TEMP%\village_ignore.txt"
+    svn propset svn:ignore -F "%TEMP%\village_ignore.txt" "C:\dev\VillageBuilder"
+    echo [OK] VillageBuilder
+)
+
+del "%TEMP%\root_ignore.txt"
+del "%TEMP%\node_ignore.txt"
+if exist "%TEMP%\village_ignore.txt" del "%TEMP%\village_ignore.txt"
+
+echo.
+echo === Verification C:\dev ===
+svn propget svn:ignore "C:\dev"
+
+pause

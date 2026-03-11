@@ -1,0 +1,20 @@
+# Local conventions and configuration
+common_conventions.md
+
+# Project registry (local paths, not portable)
+projects_config.md
+projects_config_archive.md
+
+# Team roster (local installation)
+roster.md
+
+# Messaging files
+mailbox_*.md
+outbox_*.md
+
+# Local project status files
+ETAT_ACTUEL.md
+
+# Local docs and scripts
+docs/
+scripts/

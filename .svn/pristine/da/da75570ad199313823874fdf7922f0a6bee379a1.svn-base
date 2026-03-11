@@ -1,0 +1,304 @@
+"""
+SVN MCP Server - Permet à Claude d'exécuter des opérations SVN directement.
+"""
+
+import json
+import subprocess
+import os
+from pathlib import Path
+from typing import Optional
+from pydantic import BaseModel, Field, ConfigDict
+from mcp.server.fastmcp import FastMCP
+
+# ==========================================
+# CONFIGURATION
+# ==========================================
+SCRIPTS_DIR = r"C:\dev\common\scripts"
+SVN_ROOT = r"C:\dev"  # Racine du depot - interdite comme cible de commit direct
+BACKUP_SCRIPT = os.path.join(SCRIPTS_DIR, "backup_svn.bat")
+
+mcp = FastMCP("svn_mcp")
+
+
+# ==========================================
+# HELPERS
+# ==========================================
+
+def run_command(cmd: list[str], cwd: str) -> tuple[int, str, str]:
+    """Exécute une commande dans un répertoire donné."""
+    result = subprocess.run(
+        cmd,
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace"
+    )
+    return result.returncode, result.stdout.strip(), result.stderr.strip()
+
+
+def format_error(context: str, returncode: int, stderr: str) -> str:
+    """Formate un message d'erreur clair."""
+    return json.dumps({
+        "success": False,
+        "context": context,
+        "returncode": returncode,
+        "error": stderr or "Erreur inconnue"
+    }, ensure_ascii=False, indent=2)
+
+
+def validate_project_path(project_path: str) -> Optional[str]:
+    """Vérifie que le chemin est un dossier SVN valide."""
+    p = Path(project_path)
+    if not p.exists():
+        return f"Dossier introuvable : {project_path}"
+    if not p.is_dir():
+        return f"Le chemin n'est pas un dossier : {project_path}"
+    svn_dir = p / ".svn"
+    if not svn_dir.exists():
+        return f"Pas de dépôt SVN dans ce dossier (pas de .svn) : {project_path}"
+    return None
+
+
+# ==========================================
+# MODÈLES D'ENTRÉE
+# ==========================================
+
+class SvnStatusInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    project_path: str = Field(..., description="Chemin absolu du dossier projet SVN (ex: C:\\dev\\monprojet)", min_length=3)
+
+
+class SvnCommitInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    project_path: str = Field(..., description="Chemin absolu du dossier projet SVN (ex: C:\\dev\\monprojet)", min_length=3)
+    message: str = Field(..., description="Message de commit (ex: [FEAT] Ajout formulaire login)", min_length=3, max_length=500)
+
+
+class SvnUpdateInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    project_path: str = Field(..., description="Chemin absolu du dossier projet SVN (ex: C:\\dev\\monprojet)", min_length=3)
+
+
+# ==========================================
+# OUTILS MCP
+# ==========================================
+
+@mcp.tool(
+    name="svn_status",
+    annotations={
+        "title": "SVN Status",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False
+    }
+)
+async def svn_status(params: SvnStatusInput) -> str:
+    """Retourne la liste des fichiers modifiés, ajoutés ou supprimés dans un projet SVN.
+
+    Args:
+        params (SvnStatusInput): Paramètres d'entrée contenant:
+            - project_path (str): Chemin absolu du dossier projet SVN
+
+    Returns:
+        str: JSON contenant success, project_path et la liste des modifications
+    """
+    err = validate_project_path(params.project_path)
+    if err:
+        return format_error("svn_status", -1, err)
+
+    returncode, stdout, stderr = run_command(["svn", "status"], params.project_path)
+
+    if returncode != 0:
+        return format_error("svn_status", returncode, stderr)
+
+    lines = [l for l in stdout.splitlines() if l.strip()]
+    changes = []
+    for line in lines:
+        if len(line) >= 2:
+            status_char = line[0]
+            path = line[1:].strip()
+            labels = {
+                "M": "modifié",
+                "A": "ajouté",
+                "D": "supprimé",
+                "?": "non versionné",
+                "!": "manquant",
+                "C": "conflit",
+                "R": "remplacé"
+            }
+            changes.append({
+                "status": status_char,
+                "label": labels.get(status_char, status_char),
+                "path": path
+            })
+
+    return json.dumps({
+        "success": True,
+        "project_path": params.project_path,
+        "total_changes": len(changes),
+        "changes": changes
+    }, ensure_ascii=False, indent=2)
+
+
+@mcp.tool(
+    name="svn_update",
+    annotations={
+        "title": "SVN Update",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True
+    }
+)
+async def svn_update(params: SvnUpdateInput) -> str:
+    """Met à jour le dossier projet depuis le dépôt SVN distant.
+
+    Args:
+        params (SvnUpdateInput): Paramètres d'entrée contenant:
+            - project_path (str): Chemin absolu du dossier projet SVN
+
+    Returns:
+        str: JSON contenant success, project_path et le résultat de la mise à jour
+    """
+    err = validate_project_path(params.project_path)
+    if err:
+        return format_error("svn_update", -1, err)
+
+    returncode, stdout, stderr = run_command(["svn", "update"], params.project_path)
+
+    if returncode != 0:
+        return format_error("svn_update", returncode, stderr)
+
+    return json.dumps({
+        "success": True,
+        "project_path": params.project_path,
+        "output": stdout
+    }, ensure_ascii=False, indent=2)
+
+
+@mcp.tool(
+    name="svn_commit",
+    annotations={
+        "title": "SVN Commit",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": False,
+        "openWorldHint": True
+    }
+)
+async def svn_commit(params: SvnCommitInput) -> str:
+    """Effectue un commit SVN complet : update, ajout des nouveaux fichiers, suppression des manquants, puis commit.
+
+    Args:
+        params (SvnCommitInput): Paramètres d'entrée contenant:
+            - project_path (str): Chemin absolu du dossier projet SVN
+            - message (str): Message de commit
+
+    Returns:
+        str: JSON contenant success, project_path, message et le résultat du commit
+    """
+    err = validate_project_path(params.project_path)
+    if err:
+        return format_error("svn_commit", -1, err)
+
+    # Interdire la racine SVN comme cible directe (risque d'aspirer tous les dossiers non versionnés)
+    if os.path.normpath(params.project_path) == os.path.normpath(SVN_ROOT):
+        return format_error("svn_commit", -1,
+            "Commit sur la racine C:\\dev interdit. Utilise un sous-projet specifique (ex: C:\\dev\\atornai).")
+
+    # 1. Update préventif
+    rc, out, err_out = run_command(["svn", "update"], params.project_path)
+    if rc != 0:
+        return format_error("svn_update (pre-commit)", rc, err_out)
+
+    # 2. Ajout des nouveaux fichiers : uniquement dans les dossiers DEJA versionnés
+    # On interroge svn info pour savoir quels sous-dossiers sont trackés,
+    # puis svn add seulement sur ceux-là (pas les ? de la racine)
+    rc_s, status_pre, _ = run_command(["svn", "status"], params.project_path)
+    for line in status_pre.splitlines():
+        if line.startswith("?"):
+            candidate = line[1:].strip()
+            candidate_path = os.path.join(params.project_path, candidate)
+            # Vérifier si le dossier parent est versionné
+            parent = str(Path(candidate_path).parent)
+            rc_info, _, _ = run_command(["svn", "info", parent], params.project_path)
+            if rc_info == 0:  # parent versionné -> on peut ajouter
+                run_command(["svn", "add", candidate, "--force"], params.project_path)
+
+    # 3. Suppression des fichiers manquants (status "!")
+    rc_status, status_out, _ = run_command(["svn", "status"], params.project_path)
+    for line in status_out.splitlines():
+        if line.startswith("!"):
+            missing_path = line[1:].strip()
+            run_command(["svn", "delete", missing_path], params.project_path)
+
+    # 4. Commit
+    rc, stdout, stderr = run_command(
+        ["svn", "commit", "-m", params.message],
+        params.project_path
+    )
+
+    if rc != 0:
+        return format_error("svn_commit", rc, stderr)
+
+    # 5. Lancer le backup (silencieux, ne bloque pas en cas d'échec)
+    try:
+        subprocess.Popen(
+            [BACKUP_SCRIPT, "silent"],
+            shell=True,
+            cwd=SCRIPTS_DIR,
+            creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, "CREATE_NO_WINDOW") else 0
+        )
+    except Exception:
+        pass  # Le backup est optionnel, on ne bloque pas le commit
+
+    return json.dumps({
+        "success": True,
+        "project_path": params.project_path,
+        "message": params.message,
+        "output": stdout
+    }, ensure_ascii=False, indent=2)
+
+
+@mcp.tool(
+    name="svn_backup",
+    annotations={
+        "title": "SVN Backup",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": False,
+        "openWorldHint": True
+    }
+)
+async def svn_backup() -> str:
+    """Déclenche la sauvegarde du dépôt SVN vers Google Drive (max 1 fois par jour).
+
+    Returns:
+        str: JSON contenant success et le résultat de la sauvegarde
+    """
+    if not Path(BACKUP_SCRIPT).exists():
+        return format_error("svn_backup", -1, f"Script de backup introuvable : {BACKUP_SCRIPT}")
+
+    result = subprocess.run(
+        [BACKUP_SCRIPT, "silent"],
+        shell=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace"
+    )
+
+    return json.dumps({
+        "success": result.returncode == 0,
+        "output": result.stdout.strip(),
+        "error": result.stderr.strip() if result.returncode != 0 else None
+    }, ensure_ascii=False, indent=2)
+
+
+# ==========================================
+# POINT D'ENTRÉE
+# ==========================================
+if __name__ == "__main__":
+    mcp.run()
