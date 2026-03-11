@@ -17,9 +17,8 @@ Each project can use an asynchronous messaging system between its threads. Skill
 
 - `mailbox_read.md` — read and archive messages (see this skill for `MAIL!` and `MSG?` triggers)
 - `mailbox_write.md` — send or cancel messages (triggers: `SEND?`, `SEND!`, `SEND! HANDLE`)
-- `mailbox_init.md` — initialization utility (called by onboarding/briefing)
+- `mailbox_init.md` — initialization utility (called by onboarding)
 - `onboarding.md` — integrate a new or existing thread into the messaging system
-- `briefing.md` — self-integration for an existing thread
 - `renew.md` — replace a saturating or crashed thread (transparent handover, same handle)
 - `add_project.md` — register a new project in `projects_config.md` and initialize its structure
 - `aro.md` — onboarding agent for new users

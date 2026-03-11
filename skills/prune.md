@@ -100,6 +100,13 @@ Based on the information gathered in a1 and a2, determine:
 - Entries older than the retention window (to be moved)
 - Entries within the window (to be kept)
 
+**Example — nominal case**
+File: `mailbox_ARCHI_archive.md` (8kb) — retention window: 30 days, today: 20260311
+- a0: 8kb < 20kb → proceed
+- a1: tail:5 returns an entry dated 20260308 → within window → proceed to a2
+- a2: head:20 shows entries starting from 20260201 → cut-off found at line 6 (first entry within window: 20260215)
+- a3: 5 entries to move (20260201–20260214), 12 entries to keep (20260215→present)
+
 **b) Report and pause**
 Present a summary to the user:
 > "Project [HANDLE] — [PROJECT_PATH]

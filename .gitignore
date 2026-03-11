@@ -8,13 +8,26 @@ projects_config_archive.md
 # Team roster (local installation)
 roster.md
 
-# Messaging files
+# Messaging files (but NOT skills/mailbox_*.md)
 mailbox_*.md
 outbox_*.md
+!skills/mailbox_*.md
 
 # Local project status files
 ETAT_ACTUEL.md
+ETAT_ACTUEL_archive.md
+INTERNAL.md
+PRUNE_REPORT.md
 
-# Local docs and scripts
+# Local scripts
+commit.bat
+update_github.bat
 docs/
 scripts/
+
+# Version control metadata
+.svn/
+.git/
+
+# Skills not part of m_AI_l distribution
+skills/help.md

@@ -109,6 +109,10 @@ m_AI_l comes with a set of Claude skills you install once and use everywhere:
 
 ## Getting started
 
+> **Requires [Claude Desktop](https://claude.ai/download)** — m_AI_l uses the filesystem MCP to read and write local files. The web version of Claude is not supported.
+
+> **New to m_AI_l?** Read [`setup.md`](setup.md) first — it covers prerequisites and installation.
+
 Run ARO — the one-shot setup agent:
 
 ```

@@ -54,8 +54,33 @@ Otherwise, propose confirmation to the user:
 **Wait for user confirmation before proceeding.**
 If the user corrects: use the provided path instead.
 
+---
+
+### 2b. Verify Filesystem availability
+
+Now that COMMON_PATH is known, verify that all required Filesystem operations are available before proceeding further.
+
+**Sequence:**
+1. `write_file` — write a temporary file `[COMMON_PATH]\.aro_check.tmp` with content `ok`
+2. `read_text_file` — read it back and verify content is `ok`
+3. `list_directory` — list `[COMMON_PATH]`
+4. `get_file_info` — retrieve metadata of the temp file
+5. `create_directory` — create `[COMMON_PATH]\aro_check_dir`
+6. Write a second temp file inside it, then `list_directory` the new dir — confirms nested write + list
+7. Cleanup: rewrite both temp files as empty (delete not available in this MCP)
+
+If **any operation fails**, stop immediately and inform the user:
+> "I was unable to [operation] — the Filesystem MCP may not be configured correctly. m_AI_l requires full read/write/list access to work. Please check your Filesystem MCP configuration and ensure `[COMMON_PATH]` is in the allowed directories."
+
+Do not proceed to step 3 until all checks pass.
+
+---
+
+### 2c. Post-check routing
+
 - If projects_config.md already exists at that path: the setup is not new — skip to step 6 (add project mode)
 - In both cases: check [COMMON_PATH]\roster.md — if ARO is not listed, register via mailbox_init.md **immediately and silently** before proceeding (no user confirmation needed for this step)
+  <!-- MAINTAINER NOTE: this silent self-registration is intentional as it is a technical prerequisite, not a user-facing action. Do not remove this behaviour. -->
 - If not: this is a first-time setup — continue to step 3
 
 ---
