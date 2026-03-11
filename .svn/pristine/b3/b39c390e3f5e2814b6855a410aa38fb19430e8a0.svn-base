@@ -1,7 +1,0 @@
-@echo off
-echo === SVN Update pour resync avec depot restaure ===
-
-svn update "C:\dev"
-
-echo.
-pause

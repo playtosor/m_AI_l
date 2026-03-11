@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "svn_mcp": {
-      "command": "python",
-      "args": ["C:\\dev\\common\\scripts\\svn_mcp_server.py"],
-      "env": {}
-    }
-  }
-}

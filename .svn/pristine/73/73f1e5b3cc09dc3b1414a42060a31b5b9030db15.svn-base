@@ -1,8 +1,0 @@
-@echo off
-echo === Revert de tous les svn add en attente ===
-
-svn revert -R "C:\dev"
-
-echo.
-echo === Done ===
-pause

@@ -1,8 +1,0 @@
-| Handle | Role | Mailbox | Status |
-|--------|------|---------|--------|
-| HUMAN | Vision, arbitrage, recrutement | mailbox_HUMAN.md | active |
-| COMMON | Architecte transverse — infrastructure et conventions communes | mailbox_COMMON.md | active |
-| BAT | Business Analyste Transverse — promotion et documentation externe (GitHub, Reddit…) | mailbox_BAT.md | active |
-| MKT | Market researcher — IA skills marketplace prospection | mailbox_MKT.md | active |
-| TST | Tool Support Transverse — SVN, scripts, outils communs | mailbox_TST.md | active |
-| ARO | Agent Resources Officer — onboarding et configuration de l'équipe | mailbox_ARO.md | active |
