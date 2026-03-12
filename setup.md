@@ -8,18 +8,17 @@
 
 - [Claude Desktop](https://claude.ai/download) (macOS or Windows) — free tier works perfectly
 - [Node.js](https://nodejs.org) — required by Claude Desktop to access local files
-- A folder on your computer for your project
+- A folder on your computer where Claude has **read, write, and list access** — configured via Claude Desktop's MCP filesystem settings.
 
+  > *Claude only accesses the folder you explicitly configure in Claude Desktop — nothing outside it.*
 ---
 
 ## Step 1 — Download m_AI_l
 
-**Option A — Quick start (recommended)**
-Download the starter pack: **[m_AI_l_starter.zip](#)** and unzip it into a folder of your choice on your machine — `common/` works well, but any name will do.
+Download the repository as a ZIP (click **Code → Download ZIP** on GitHub) and unzip it into a folder of your choice — `common/` works well, but any name will do. Or clone it:
 
-**Option B — Clone the repo**
 ```
-git clone https://github.com/[repo]/m_AI_l.git my-m_AI_l
+git clone https://github.com/playtosor/m_AI_l.git my-m_AI_l
 ```
 
 Your folder should look like this after extraction:
@@ -50,7 +49,7 @@ m_AI_l/
 
 ## Step 2 — Run ARO (the setup agent)
 
-ARO is a one-shot onboarding skill that configures everything for you.
+ARO (Agent Resources Officer) is an onboarding skill that configures everything for you.
 
 1. Open **Claude Desktop**
 2. Start a **new conversation**

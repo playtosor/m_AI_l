@@ -22,6 +22,7 @@ PRUNE_REPORT.md
 # Local scripts
 commit.bat
 update_github.bat
+push_github.bat
 docs/
 scripts/
 
