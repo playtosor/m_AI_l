@@ -1,4 +1,4 @@
-# m_AI_l
+# m_AI_l `v1.0.0`
 
 > *Asynchronous messaging for human–AI collaborative projects — built entirely in Markdown.*
 
