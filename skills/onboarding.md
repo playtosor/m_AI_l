@@ -86,7 +86,7 @@ Produce the ready-to-paste startup message the user will send to open the new th
 
 **Resolve paths first:** check `[COMMON_PATH]\projects_config.md` for the project's absolute path. If `projects_config.md` is not available, fall back to `[PROJECT]` placeholder — the user replaces manually.
 
-**Skills to read at startup:** propose a list of relevant skills based on the thread's role, and ask the user to confirm or adjust before generating the prompt.
+**Skills to read at startup:** propose a list of relevant skills based on the thread's role, and ask the user to confirm or adjust before generating the prompt. Always include `[COMMON_PATH]\skills\svn-workflow\SKILL.md` — this skill applies to all threads on all projects.
 
 Display it clearly in a code block:
 
@@ -99,7 +99,6 @@ You are [HANDLE], [ROLE] in [PROJECT_PATH]\
 Your handle is [HANDLE]. Your mailbox is [PROJECT_PATH]\mailbox_[HANDLE].md.
 Read [PROJECT_PATH]\roster.md and [COMMON_PATH]\roster.md to know your team.
 Read now: [COMMON_PATH]\skills\mailbox_read.md
-Read also: [COMMON_PATH]\skills\m_AI_l_help.md
 Then send MAIL! to read your first messages.
 To contact a team member, use mailbox_write.md — do not reply in chat.
 ```

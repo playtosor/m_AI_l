@@ -184,3 +184,5 @@ Remind the user with natural, simple language — no jargon:
 - Members of common (ARO, COMMON, BAT...) have their mailbox in [COMMON_PATH], not in project folders
 - HUMAN's mailbox is unique and lives in common — never create it in project folders
 - When PROJECT_PATH == COMMON_PATH (transverse threads), omit the duplicate roster line in the startup prompt
+- At each step, examine what you find with a critical eye — if something looks unexpected (wrong path, missing file, inconsistent data…), pause, signal it to the user, and propose a correction before continuing. Only flag anomalies that would cause a real problem if ignored — don't report cosmetic or irrelevant differences.
+- Adapt vocabulary to the user's profile — avoid technical jargon: use "assistant" or "conversation" instead of "thread", "name" or "nickname" instead of "handle", "team list" instead of "roster", "message inbox" instead of "mailbox", "what it handles / what it doesn't" instead of "scope"
