@@ -63,6 +63,8 @@ ARO will detect your language and walk you through the rest interactively.
 
 > 💡 **Model tip:** ARO works with any Claude model. For setup, Claude Sonnet is recommended. Haiku works for daily use once everything is in place.
 
+> ⚠️ **Before running ARO:** Make sure the MCP Filesystem is connected in Claude Desktop and that your m_AI_l folder is listed in the allowed directories. If Claude cannot find the file, it will not start — see Troubleshooting below.
+
 ---
 
 ## Step 3 — That's it
@@ -117,6 +119,12 @@ This is intentional. The system is asynchronous by design — no server, no auto
 
 **The mailbox file doesn't exist yet**
 → Create an empty file named `mailbox_[HANDLE].md` in your project folder, or re-run ARO.
+
+**ARO doesn't start / doesn't respond as expected**
+→ Check that the MCP Filesystem is connected in Claude Desktop (look for the filesystem tool in the tools panel).
+→ Check that your m_AI_l folder is listed in the allowed directories of the MCP Filesystem configuration.
+→ Without an active MCP connection, Claude will look for the file in its own remote environment — and fail silently.
+→ If the MCP is connected but ARO still doesn't read the file, remind Claude explicitly: *"You have access to the local filesystem via MCP — please use it to read the file."* Claude sometimes needs this nudge.
 
 **ARO doesn't find the common folder**
 → Double-check the path you pasted. Use the full absolute path (e.g. `C:\dev\common\skills\aro.md`).

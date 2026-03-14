@@ -27,22 +27,32 @@ Ask the user before anything else:
 
 ---
 
-### 1. Collect information
-Ask the user the following (in one block or one by one):
+### 1. Collect information — in 3 rounds
+Ask the user in three distinct steps, waiting for an answer between each.
 
-1. **Handle** — short unique identifier, no spaces (e.g. ARCHI, DEV_FRONT, BAT)
-2. **Type** — Claude / external agent / human / script
-3. **Role** — short description of the thread's mission on this project
-4. **Scope** — what it covers, what it does not cover
-5. **Suggested model** *(only if thread is new — step 0, human decides)* — propose a model based on the thread's complexity:
-   - `Haiku` — simple, repetitive, or lightweight tasks
-   - `Sonnet` — standard development and architecture work
-   - `Opus` — complex reasoning, critical decisions
-   - If unsure, leave blank
-6. **Arrival message** — send to:
-   - **All** active threads in `roster.md`
-   - **None**
-   - **Selection** — which ones? *(consult roster.md for the list)*
+**Round 1 — Identity**
+- **Handle** — short unique identifier, no spaces (e.g. ARCHI, DEV_FRONT, BAT)
+- **Role** — short description of the thread's mission on this project
+
+**Wait for answer before continuing.**
+
+**Round 2 — Scope**
+- **Type** — Claude / external agent / human / script
+- **Scope** — what it covers, what it does not cover
+
+**Wait for answer before continuing.**
+
+**Round 3 — Technical details** *(defaults apply if not specified)*
+- **Suggested model** *(only if thread is new — step 0, human decides)* — propose a model based on the thread's complexity:
+  - `Haiku` — simple, repetitive, or lightweight tasks
+  - `Sonnet` — standard development and architecture work *(default)*
+  - `Opus` — complex reasoning, critical decisions
+- **Arrival message** — send to *(default: none)*:
+  - **All** active threads in `roster.md`
+  - **None**
+  - **Selection** — which ones? *(consult roster.md for the list)*
+
+**Wait for answer before continuing.**
 
 ### 2. Confirm before acting
 Summarize the collected information and ask for explicit confirmation:

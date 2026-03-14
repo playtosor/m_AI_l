@@ -54,7 +54,19 @@ Check that `PROJECT_PATH` exists on the filesystem.
 - If it does not exist: inform the user and stop — ask them to create the folder first before running this skill again.
 
 ### 3. Check for duplicates
-If `PROJECT_HANDLE` already exists in `projects_config.md`: signal the conflict and stop.
+If `PROJECT_HANDLE` already exists in `projects_config.md`, do not stop — instead, diagnose and propose a recovery path:
+
+- **Project registered AND folder healthy** (roster.md present, expected files in place):
+  > "This project is already registered and looks operational. Would you like to invite a new thread?"
+  Offer to run `onboarding.md` directly.
+
+- **Project registered BUT files missing** (roster.md absent or incomplete):
+  > "This project is registered but [X, Y] are missing. I can create them — shall I?"
+  Wait for confirmation before creating the missing files.
+
+- **User wants a distinct new project**:
+  > "This handle is already in use. What handle would you like for this new project?"
+  Resume from step 2 with the new handle.
 
 ### 4. Add the project to projects_config.md
 Append a row:
