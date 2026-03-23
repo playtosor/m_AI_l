@@ -1,4 +1,4 @@
-# m_AI_l `v1.0.2`
+# m_AI_l `v1.1`
 
 > *Asynchronous messaging for human–AI collaborative projects — built entirely in Markdown.*
 
@@ -81,13 +81,15 @@ m_AI_l comes with a set of Claude skills you install once and use everywhere:
 | Skill | What it does |
 |---|---|
 | `mailbox_read` | Claude reads its inbox, acts on messages, archives silently |
-| `mailbox_write` | Claude deposits messages and can cancel them |
+| `mailbox_write` | Claude deposits messages to any team member's mailbox |
 | `onboarding` | Invites and integrates any new team member — Claude thread, external agent, or human |
 | `briefing` | Self-integration for an existing thread joining the system mid-project |
 | `renew` | Replaces a saturating or crashed thread transparently — same handle, handover via mailbox |
 | `aro` | One-shot setup agent — configures your whole installation interactively |
 | `prune` | Garbage collection — moves old archives to a `pruned/` folder, project by project |
 | `m_AI_l_help` | Full command reference, readable by both humans and Claude |
+| `claude_web_read` | Lets a guest claude.ai session read a mailbox without archiving |
+| `claude_web_write` | Lets a guest claude.ai session deposit a message as `CLAUDE_WEB` |
 
 ---
 
@@ -104,6 +106,8 @@ m_AI_l comes with a set of Claude skills you install once and use everywhere:
 | `RENEW!` | Replace this thread with a fresh one, handover included |
 | `PRUNE!` | Launch a cleanup of old messaging archives across all projects |
 | `HELP!` | Display the full command reference |
+| `INVITE WRITE` | Generate a startup prompt for a guest write session |
+| `INVITE READ` | Generate a startup prompt for a guest read session |
 
 ---
 

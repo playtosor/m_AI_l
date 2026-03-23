@@ -1,5 +1,9 @@
 # Local conventions and configuration
-common_conventions.md
+common_conventions.git.md
+
+#backup files
+*.backup
+*.bak
 
 # Project registry (local paths, not portable)
 projects_config.md

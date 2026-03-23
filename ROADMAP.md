@@ -32,8 +32,8 @@ Currently evaluating codex and mitral CLI
 Replace or augment Markdown-based file operations with lightweight scripts for `mailbox_write`, archiving, and `PRUNE`. Scripts would handle atomicity and edge cases more robustly. A graceful fallback to pure Markdown would be maintained for users without runtime dependencies — the system must remain usable without installing anything.
 
 
-**External mailbox viewer**
-A lightweight tool (web or desktop) to read `mailbox_HUMAN.md` without opening a text editor. The current workaround (open in VSCode or Notepad) is functional but not frictionless for non-technical users.
+**Obsidian integration**
+A bridge between m_AI_l and Obsidian is already partially available (Python, developed by TST): automatic sync of all projects from `projects_config.md` to an Obsidian vault, with links to `ETAT_ACTUEL.md`, rosters, and mailboxes. An interactive MCP server completes the picture for on-demand operations. This makes the mailbox viewer use case largely covered. Further work may explore richer Obsidian views, graph navigation, and deeper integration as usage matures.
 
 ---
 

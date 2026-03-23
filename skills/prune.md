@@ -145,6 +145,7 @@ Once all projects are processed, summarize:
 
 ## Rules
 
+- Every file modified by PRUNE (source files after move) must end with the sentinel line `<!-- END -->` — rewrite accordingly
 - Never modify active mailboxes (`mailbox_[HANDLE].md`) — archives and outboxes only
 - Never delete files — always move content to `pruned/`
 - Always pause and wait for user confirmation before processing each project

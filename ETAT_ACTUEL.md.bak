@@ -1,0 +1,122 @@
+# Common — État actuel
+
+> Ressources communes disponibles dans C:\dev\common\ (README, bonnes pratiques, skills)
+> Historique des modifications : voir `ETAT_ACTUEL_archive.md`
+
+## Rôle des fils de ce projet
+Architecture transverse — conception et évolution de l'infrastructure commune à tous les projets de `C:\dev\`. Ne touchent pas au code des projets individuels.
+
+## Contexte du projet
+`C:\dev\common\` est la couche d'infrastructure partagée : skills globaux, conventions, bonnes pratiques. Un système de messagerie inter-fils asynchrone (m_AI_l) est opérationnel et validé en production.
+
+## Productions — état actuel des fichiers
+
+### Skills messagerie
+- `skills\mailbox_init.md` — initialisation d'une mailbox (appelé par onboarding)
+- `skills\mailbox_read.md` — lecture et archivage des messages (triggers : MAIL!, MSG?, HELP!, PRUNE!)
+- `skills\mailbox_write.md` — envoi et annulation de messages (triggers : SEND?, SEND!, SEND! HANDLE)
+- `skills\onboarding.md` — intégration d'un fil nouveau ou existant (v2 : template d'amorçage généré à l'étape 5)
+- `skills\renew.md` — remplacement d'un fil saturé ou planté (triggers : RENEW?, RENEW!)
+- `skills\aro.md` — agent d'accueil nouveaux utilisateurs
+- `skills\prune.md` — garbage collection des archives (trigger : PRUNE!, thread single-use)
+- `skills\add_project.md` — enregistrement d'un projet dans `projects_config.md`
+
+### Skills transversaux
+- `skills\commun.md` — hub m_AI_l générique (lu au démarrage de chaque session)
+- `skills\m_AI_l_help.md` — manuel utilisateur m_AI_l
+
+### Fichiers de configuration
+- `projects_config.md` — source de vérité des chemins projets actifs
+- `projects_config_archive.md` — projets terminés/abandonnés
+- `roster.md` — membres de l'équipe common (HUMAN, COMMON, BAT, MKT, TST) — ARO relocalisé dans AROPHI
+- `common_conventions.md` — conventions locales C:\dev\ (ignoré par GitHub)
+- `INTERNAL.md` — stub de redirection (vidé ce session, contenu transféré dans common_conventions.md)
+
+### Skills SVN
+- `skills\svn-workflow\SKILL.md` — workflow de commit SVN pour tous les fils : svn_status avant commit, svn_commit via MCP, format de message [PROJET/COMMON/TRANSVERSE][TAG]
+
+### Scripts
+- `scripts\prune_scan.js` — scanner Node pour inspection des archives avant PRUNE (utilisable manuellement)
+- `scripts\svn_mcp_server.py` — serveur MCP SVN (commit, status, update, backup) — working copy racine C:\dev, sous-dossiers acceptés
+- `scripts\set_svnignore3.bat` — propagation svn:ignore sur tous les projets actifs (inclut backups, pruned, Expo, .git)
+- `scripts\commit.bat` — fallback commit manuel (si MCP indisponible)
+- `scripts\claude_desktop_config_svn.json` — config MCP SVN pour Claude Desktop (référence)
+
+### MCP Obsidian (C:\dev\MCP_Obsidian\)
+- `obsidian_core.py` — module partagé : helpers make_link, rebuild_ia_section, chargement .env
+- `mcp_obsidian_bridge.py` — serveur MCP interactif V3 (outils Claude : trackFile, listTrackedFiles, archiveProject…)
+- `obsidian_sync.py` — sync automatique tous projets depuis projects_config.md
+- `sync_obsidian.bat` — lanceur sync (venv commun)
+- Config .env : `C:\dev\environnement\MCP_Obsidian.env` (non versionné)
+
+## Upgrade projets
+- **atornai** ✅ — roster initialisé, HUMAN + ARCHI + DEV onboardés, PROMPT en cours
+- **labyFlecheReact** ✅ — intégration m_AI_l faite
+- **labyChrono** ✅ — projet Replit rapatrié, repo GitHub privé (playtosor/LABYCHRONO), scripts Git en place
+- **SKILLDOCU** ✅ — release GitHub publiée : https://github.com/playtosor/m_AI_l (compte playtosor). m_AI_l_help.md livré, audit complet, workflow Git mis en place.
+
+## Conventions SVN établies (session 20260312 — TST)
+- Serveur MCP SVN opérationnel — `svn_commit` fonctionne sur tous les sous-dossiers de `C:\dev`
+- Format message de commit : `[PROJET][TAG]` / `[COMMON][TAG]` / `[TRANSVERSE][TAG]` + description
+- `svn_status` obligatoire avant chaque commit pour vérifier les fichiers `?` inattendus
+- Config Claude Desktop : `COMSPEC` + `PATH` (avec chemin TortoiseSVN) requis pour que le hook pre-commit démarre
+- `svn:ignore` complété : `backups` et `pruned` ignorés sur tous les projets
+- Chemin TortoiseSVN : `C:\outils de dev\tsvn\bin`
+
+## Conventions établies
+- Handle : identifiant court sans espaces (ex : ARCHI, BAT, COMMON)
+- Roster : `roster.md` par projet — créé automatiquement au premier enregistrement
+- Format message : `HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body`
+- Annulation : `HANDLE // YYYYMMDD-HHMM // L // ANNULS:TIMESTAMP_CIBLE // n/a`
+- Chemins relatifs dans les skills (GitHub-ready)
+- `MAIL!` en début de message déclenche `mailbox_read` immédiatement
+- `SEND?` déclenche une réflexion sur ce qui vaut la peine d'être communiqué
+- `M!` en début de message = mode mobile (réponses courtes, pas d'actions fichiers)
+- `C!` — retour ordinateur : annule le mode M!, toutes les actions fichiers redeviennent disponibles
+- Mailboxes distribuées dans chaque projet (pas centralisées) — décision architecturale actée
+- Les nouveaux fils lisent les rosters projet + common pour connaître leur équipe
+- Mailbox HUMAN unique dans common — jamais recréée dans les dossiers projet
+- Handle de fil (ex: ARCHI) ≠ handle de projet (ex: LABYFLECHE) — deux espaces de nommage distincts
+- `ETAT_ACTUEL.md` reste en français pour la v1 — migration possible en v2
+- Confidentialité mailboxes : convention "ne pas traiter le contenu existant" documentée dans `mailbox_write.md`
+- `commun.md` séparé de `common_conventions.md` — hub m_AI_l générique vs conventions locales installées
+
+## Template d'amorçage standard (v2 — généré par onboarding.md étape 5)
+```
+Read C:\dev\common\INTERNAL.md then C:\dev\common\skills\commun.md then C:\dev\[PROJECT]\ETAT_ACTUEL.md.
+You are [HANDLE], [ROLE] in C:\dev\[PROJECT]\
+Your handle is [HANDLE]. Your mailbox is C:\dev\[PROJECT]\mailbox_[HANDLE].md.
+Read C:\dev\[PROJECT]\roster.md and C:\dev\common\roster.md to know your team.
+Read now: C:\dev\common\skills\mailbox_read.md
+Read also: C:\dev\common\skills\m_AI_l_help.md
+Then send MAIL! to read your first messages.
+To contact a team member, use mailbox_write.md — do not reply in chat.
+```
+
+> Note : le template français de l'ancienne version reste valide pour les fils francophones.
+
+## À ne pas faire
+- Toucher au code des projets individuels
+- Modifier les `.env` ou accéder à `C:\dev\environnement\`
+- Explorer librement les dossiers projet — voir règle dans commun.md
+- Lire `node_modules\`, `dist\`, `build\` ou tout dossier généré
+
+## Prochaines étapes
+1. Brancher MCP Obsidian dans Claude Desktop (config prête dans docsTechniques.md)
+2. Refactoriser `mcp_obsidian_bridgeV2.1.py` -> supprimer (remplacé par V3)
+3. Intégrer `MCP_Obsidian` dans `projects_config.md`
+4. À terme : explorer un serveur MCP Python ou node pour `write_mail` (atomicité, moins de tokens)
+5. Intégrer `prune_scan.js` dans le workflow PRUNE (trigger automatique avant inspection)
+6. V1.5 — fichiers mailbox numérotés par message (mailbox_HANDLE_1.md, _2.md…) : élimine le risque d'écrasement sans disruption architecturale. Migration tardive sans coût élevé. Proposition GPT documentée dans `docs\m_AI_l_v1.5_proposition.md`
+7. V1.1 — confirmation de lecture des messages : aucun mécanisme actuel. À concevoir (accusé de réception ? convention outbox ?)
+8. TST — svn:ignore pour mailboxes sur nouveaux projets : convention locale à définir (common_conventions.md ou script TST), pas dans les skills génériques
+9. Pousser corrections récentes sur GitHub (BAT à prévenir) : onboarding.md, add_project.md, renew.md, common_conventions.md, INTERNAL.md, svn-workflow/SKILL.md
+10. Question en suspens de HUMAN à traiter en début de prochaine session (voir SELF// dans mailbox)
+
+## Incidents
+- 20260317 — obsidian_sync.py (bug symlink vers soi-même) a écrasé plusieurs mailboxes lors d'un test avec PATH_IA_WORKSPACE = C:\dev\. Cause : ia_dir == project_path, make_link créait un lien sur lui-même. Correction : Option B (ia_dir = obs_dir dans vault), garde anti-écrasement ajoutée dans obsidian_sync.py et mcp_obsidian_bridge.py. Mailboxes restaurées depuis sauvegarde.
+- 20260311 — MKT a écrasé `mailbox_BAT.md` avec `write_file` au lieu d'append (message perdu). Même erreur commise par COMMON sur `mailbox_COMMON_archive.md`. Cause : absence d'opération append native dans le Filesystem MCP. Correction : `mailbox_write.md` mis à jour (lire + réécrire explicitement prescrit, contradiction confidentialité résolue). Solution structurelle reportée en v1.5 (mailbox numérotées).
+- 20260312 — MCP svn_commit inopérant (hook pre-commit ne démarrait pas). Cause : `COMSPEC` et `PATH` absents de l'environnement Python du venv. Correction : ajout explicite dans la config Claude Desktop. Bugs annexes corrigés dans `svn_mcp_server.py` : find_svn_root, batch add/delete, timeout, try/except, restriction SVN_ROOT, chemins absolus obligatoires.
+
+## État
+STABLE — système de messagerie opérationnel et validé en production (atornai)

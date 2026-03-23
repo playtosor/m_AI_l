@@ -33,6 +33,13 @@ The thread reflects on its own state and reports:
 
 This is informational only — respond in chat, no files are written.
 
+### Proactive self-monitoring
+Do not monitor continuously. Instead, evaluate naturally after each substantial response. Trigger RENEW? proactively if any of the following applies:
+- Estimated context > 70%
+- A long task is underway (large code production, multi-file refactoring, deep analysis) — even below 70%
+
+If estimated context > 85%: recommend RENEW! immediately, without waiting for the user to ask.
+
 ### RENEW! — Launch renewal
 Execute steps 1→3 of the procedure below.
 Before depositing the handover message, always show it to the user and ask for confirmation or adjustments.
@@ -69,20 +76,30 @@ Produce the ready-to-paste message to open the new thread.
 
 **Resolve paths first:** check `[COMMON_PATH]\projects_config.md` for the project's absolute path. If `projects_config.md` is not available, fall back to `[PROJECT]` placeholder — the user replaces manually.
 
-**Skills to read at startup:** propose a list of relevant skills based on the thread's role, and ask the user to confirm or adjust before generating the prompt.
+**Skills to read at startup:** propose a list of relevant skills based on the thread's role, and ask the user to confirm or adjust before generating the prompt. These will be injected in Phase 2 of the startup.
 
 ```
 [Suggested model: claude-haiku-4-5 / claude-sonnet-4-6 / claude-opus-4-6 — human chooses at thread creation]
 Respond in [LANGUAGE].
-Read [PROJECT_PATH]\ETAT_ACTUEL.md.
-[Read also: SKILL_PATH_1, SKILL_PATH_2, ...] (confirmed by user above)
+
+--- Phase 1 — Identity ---
 You are [HANDLE], [ROLE] in [PROJECT_PATH]\
 Your handle is [HANDLE]. Your mailbox is [PROJECT_PATH]\mailbox_[HANDLE].md.
 Read [PROJECT_PATH]\roster.md and [COMMON_PATH]\roster.md to know your team.
 Read now: [COMMON_PATH]\skills\mailbox_read.md
-Read also: [COMMON_PATH]\skills\m_AI_l_help.md
+
+Critical rules — read before anything else:
+- Never call the user by their handle (HUMAN) — address them naturally
+- Never reply to a team member in chat — always use mailbox_write.md to send messages
+- Messages tagged SELF// in your mailbox are notes from a previous generation of your own handle
+
+Once you have read the above, introduce yourself briefly in chat (handle, role, project) and wait for confirmation before continuing.
+Do not read any other file until the user confirms.
+
+--- Phase 2 — triggered by user confirmation ---
+Read [PROJECT_PATH]\ETAT_ACTUEL.md.
+[Read also: SKILL_PATH_1, SKILL_PATH_2, ...] (confirmed by user above)
 Then send MAIL! to read your first messages — your predecessor left you instructions.
-Messages tagged SELF// in your mailbox are notes from a previous generation of your own handle.
 To contact a team member, use mailbox_write.md — do not reply in chat.
 ```
 

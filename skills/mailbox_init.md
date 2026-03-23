@@ -23,13 +23,15 @@ Create the messaging infrastructure for a new or existing thread joining the tea
 ## Procedure
 
 ### 1. Create messaging files
-Create the following empty files in `PROJECT_PATH` if they do not already exist:
+Create the following files in `PROJECT_PATH` if they do not already exist:
 
-- `mailbox_[HANDLE].md`
-- `mailbox_[HANDLE]_archive.md`
-- `outbox_[HANDLE].md`
+- `mailbox_[HANDLE].md` — with content: `<!-- END -->`
+- `mailbox_[HANDLE]_archive.md` — with content: `<!-- END -->`
+- `outbox_[HANDLE].md` — with content: `<!-- END -->`
 
 Never overwrite an existing file.
+
+> The sentinel line `<!-- END -->` is required at the end of all messaging files — active mailboxes, archives, and outboxes. It serves as the anchor for `edit_file` insertions. For archives, the sentinel moves forward with each archiving cycle (see `mailbox_read.md`).
 
 **Exception — HUMAN handle:** HUMAN has a single mailbox located in `common` (`[COMMON_PATH]\mailbox_HUMAN.md`). Never create HUMAN mailbox files in a project folder. Skip step 1 entirely if HANDLE is HUMAN.
 

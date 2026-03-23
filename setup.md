@@ -129,6 +129,20 @@ This is intentional. The system is asynchronous by design — no server, no auto
 **ARO doesn't find the common folder**
 → Double-check the path you pasted. Use the full absolute path (e.g. `C:\dev\common\skills\aro.md`).
 
+**Sentinels accidentally removed from mailbox files**
+→ Each mailbox and archive file must end with `<!-- END -->` on its last line. If this line gets deleted (manual edit, external tool), `mailbox_write` will fail silently and `mailbox_read` will not archive correctly.
+→ **To fix a single file:** open it and add `<!-- END -->` as the last line.
+→ **To fix all projects at once:** run the migration script (requires Node.js):
+
+```
+cd C:\path\to\common\scripts
+node migrate_sentinel.js
+```
+
+The script reads `projects_config.md`, lists affected files project by project, and asks for confirmation before making any change. It also removes duplicate sentinels if any.
+
+> This script is an internal maintenance tool — it is not required to use m_AI_l.
+
 ---
 
 ## You're ready

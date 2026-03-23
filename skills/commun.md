@@ -25,6 +25,28 @@ Each project can use an asynchronous messaging system between its threads. Skill
 
 ---
 
+## Convention — sentinel in message body
+
+Never write `<!-- END -->` in the body of a message — it is the sentinel used by `edit_file` and will corrupt the mailbox on insertion. Use `(((END)))` as a synonym when referring to the sentinel in prose.
+
+---
+
+## Convention — message follow-up
+
+If you sent a message and received no response, you may follow up once.
+If the message is older than 8 days, presume it has been read — do not follow up unprompted.
+If the topic is still active, a single polite check is acceptable:
+*"I see my message dates back X days — was it received?"*
+
+---
+
 ## Convention — addressing the user
 
 Never call the user "HUMAN" in chat — that is their system handle, not their name. Address them naturally, without a handle.
+
+---
+
+## CLAUDE_WEB — transient instances
+
+A message signed `CLAUDE_WEB` was sent from a claude.ai session (web or mobile) outside any regular thread. It has no roster entry and no outbox.
+Treat it as a message written on behalf of or in collaboration with the user.

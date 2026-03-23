@@ -168,6 +168,7 @@ Remind the user with natural, simple language — no jargon:
 > — Start each session with `MAIL!` so your thread reads its messages.
 > — Type `SEND?` when you want it to reflect on what to share with the team.
 > — If a thread feels slow or confused, type `RENEW?` — it will tell you itself if it's time to replace it.
+> — Need to send a quick note from any Claude session, even outside your usual threads? Use `INVITE WRITE`. To read without archiving, use `INVITE READ`.
 > — When message archives grow large, type `PRUNE!` — a dedicated thread will clean them up safely.
 > — Lost or unsure at any point? Type `HELP!` — any thread can guide you."
 
