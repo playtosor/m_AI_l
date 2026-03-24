@@ -20,6 +20,9 @@ RENEW!          Replaces this thread with a fresh one
 PRUNE!          Launches a cleanup of old messaging archives across all projects
 HELP!           Displays this help
 HELP! TRIGGER   Displays the details of a specific command
+INVITE          Lists the available guest session modes
+INVITE READ     Generates a prompt for a guest read-only session
+INVITE WRITE    Generates a prompt for a guest write-only session
 ```
 
 Type `HELP! TRIGGER` for the details of a specific command.
@@ -105,6 +108,38 @@ What it does    : Displays the detailed reference card for a specific command �
 When to use it  : When you want to understand the exact behaviour of a command before using it.
 Example         : `HELP! RENEW!` → displays the detailed card for RENEW!
 See also        : HELP!
+
+---
+
+### HELP! INVITE
+What it does    : Displays the details of all INVITE commands grouped together — INVITE, INVITE READ, and INVITE WRITE.
+When to use it  : When you want to understand the guest session system as a whole before choosing a mode.
+Example         : `HELP! INVITE` → displays the three entries below in sequence.
+See also        : HELP!, HELP! TRIGGER
+
+---
+
+### INVITE
+What it does    : Lists the two available guest session modes for reading or writing messages outside a regular thread.
+When to use it  : When you want to check what guest session types are available.
+Example         : `INVITE` → displays the two available modes: READ and WRITE.
+See also        : INVITE READ, INVITE WRITE
+
+---
+
+### INVITE READ
+What it does    : Generates a startup prompt for a guest claude.ai session that can read mailboxes and context files without archiving or modifying them.
+When to use it  : When you need to quickly check messages or files from a separate chat session, outside your regular thread.
+Example         : `INVITE READ` → generates a prompt to copy-paste into a new claude.ai chat window. The session reads and reports, but takes no action.
+See also        : INVITE, INVITE WRITE
+
+---
+
+### INVITE WRITE
+What it does    : Generates a startup prompt for a guest claude.ai session that can deposit a message into a mailbox without access to the full thread session.
+When to use it  : When you want to send a quick update to the team from outside your regular working thread.
+Example         : `INVITE WRITE` → generates a prompt to copy-paste into a new claude.ai chat window. The session writes a message signed as CLAUDE_WEB and deposits it.
+See also        : INVITE, INVITE READ
 
 ---
 
