@@ -1,0 +1,21 @@
+{
+  "name": "@m_ai_l/core",
+  "version": "0.1.0",
+  "description": "m_AI_l async inter-agent messaging core",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "!dist/coordinateur-helpers"],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --runInBand",
+    "lint": "eslint src"
+  },
+  "keywords": ["messaging", "async", "agent", "markdown", "mailbox"],
+  "license": "Apache-2.0",
+  "engines": { "node": ">=18.0.0" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/playtosor/m_AI_l.git",
+    "directory": "packages/core"
+  }
+}

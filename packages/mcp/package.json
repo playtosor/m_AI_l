@@ -1,0 +1,43 @@
+{
+  "name": "@m_ai_l/mcp",
+  "version": "0.1.0",
+  "description": "m_AI_l MCP server + tools",
+  "main": "dist/server.bundle.js",
+  "types": "dist/server.d.ts",
+  "files": [
+    "dist/server.bundle.js",
+    "dist/server.d.ts"
+  ],
+  "bin": {
+    "m-ai-l-mcp": "dist/server.bundle.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepack": "tsc && esbuild src/server.ts --bundle --platform=node --format=cjs --target=node18 --outfile=dist/server.bundle.js --external:@modelcontextprotocol/sdk --external:zod",
+    "test": "jest --passWithNoTests",
+    "lint": "eslint src"
+  },
+  "keywords": [
+    "messaging",
+    "mcp",
+    "agent",
+    "tools"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/playtosor/m_AI_l.git",
+    "directory": "packages/mcp"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@m_ai_l/core": "workspace:*",
+    "esbuild": "^0.28.2"
+  }
+}

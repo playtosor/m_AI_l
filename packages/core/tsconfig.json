@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@m_ai_l/core": ["./src/index.ts"],
+      "@m_ai_l/mcp": ["../../packages/mcp/src/server.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/tools/mailbox.ts", "src/**/__tests__/**"]
+}
