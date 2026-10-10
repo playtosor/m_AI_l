@@ -1,6 +1,6 @@
 {
   "name": "@m_ai_l/mcp",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "description": "m_AI_l MCP server + tools",
   "main": "dist/server.bundle.js",
   "types": "dist/server.d.ts",

@@ -107,23 +107,28 @@ Business errors: `ProjectNotFoundError`, `RosterEntryNotFoundError`,
 
 ## API MCP (`@m_ai_l/mcp`)
 
-13 tools registered on stdio:
+The MCP server registers 13 tools. All are technically callable by any MCP client.
+However, we recommend harnesses restrict autonomous agent access to the **5 message
+lifecycle tools** (`read_mail`, `write_mail`, `edit_mail`, `cancel_mail`, `archive_mail`).
+The remaining 8 tools (`get_projects`, `get_roster`, `resolve_handle_candidates`,
+`get_member_context`, `init_mail`, `handover_self`, `read_recent_archive`, `get_outbox`)
+are intended for CLI or administrative setup, not for autonomous agent use.
 
-| Tool | Input (required, optional...) |
-|---|---|
-| `read_mail` | `project_handle`, `handle`, `limit?`, `no_archive?` |
-| `write_mail` | `project_handle`, `sender`, `recipient`, `priority`, `subject`, `body`, `sender_project_handle?` |
-| `edit_mail` | `project_handle`, `sender`, `recipient`, `timestamp`, `subject`, `new_priority?`, `new_subject?`, `new_body?` |
-| `cancel_mail` | `project_handle`, `sender`, `recipient`, `timestamp`, `subject` |
-| `archive_mail` | `project_handle`, `handle` |
-| `read_recent_archive` | `handle`, `limit?`, `current_project_handle?`, `cwd?` |
-| `get_projects` | none |
-| `get_roster` | `project_handle` |
-| `get_member_context` | `project_handle`, `handle` |
-| `resolve_handle_candidates` | `target_handle`, `current_project_handle?`, `cwd?` |
-| `init_mail` | `project_handle`, `handle`, `role`, `mailbox?`, `status?` |
-| `handover_self` | `project_handle`, `handle`, `body`, `sender?` |
-| `get_outbox` | `project_handle`, `handle` |
+| Tool | Input (required, optional...) | Purpose note |
+|---|---|---|
+| `read_mail` | `project_handle`, `handle`, `limit?`, `no_archive?` | Read (and archive) inbox messages |
+| `write_mail` | `project_handle`, `sender`, `recipient`, `priority`, `subject`, `body`, `sender_project_handle?` | Deliver a message + outbox trace |
+| `edit_mail` | `project_handle`, `sender`, `recipient`, `timestamp`, `subject`, `new_priority?`, `new_subject?`, `new_body?` | Edit unread in place, else send `CORRECTION:` |
+| `cancel_mail` | `project_handle`, `sender`, `recipient`, `timestamp`, `subject` | Remove an unread message |
+| `archive_mail` | `project_handle`, `handle` | **Maintenance**: archives the entire mailbox and resets to sentinel (not a per-message action) |
+| `read_recent_archive` | `handle`, `limit?`, `current_project_handle?`, `cwd?` | Recovery after crash-interrupted reads |
+| `get_projects` | none | List all active projects |
+| `get_roster` | `project_handle` | List handles of a project |
+| `get_member_context` | `project_handle`, `handle` | Resolved paths + member context |
+| `resolve_handle_candidates` | `target_handle`, `current_project_handle?`, `cwd?` | current project -> COMMON -> all active projects |
+| `init_mail` | `project_handle`, `handle`, `role`, `mailbox?`, `status?` | Create messaging files + roster entry |
+| `handover_self` | `project_handle`, `handle`, `body`, `sender?` | Standardized self-handover note |
+| `get_outbox` | `project_handle`, `handle` | Read outbox (read-only, write path is frozen) |
 
 `write_mail` with `sender_project_handle` different from `project_handle` signs
 the sender as `ORIGIN/HANDLE` for cross-project delivery. Cancel and edit only
