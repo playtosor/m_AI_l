@@ -6,7 +6,6 @@ import { RosterEntryNotFoundError } from "../domain/errors";
 import { withFileLock } from "../lib/lock";
 import { resolveEffectiveSender } from "../lib/sender-resolution";
 import { assertRecipientIsDeliverable, findRosterEntry, resolveMemberMailboxPath, sanitizeMessageField } from "./mail-routing";
-import { sanitizeSubjectDelimiter } from "../lib/message-format";
 import { writeMail } from "./write-mail";
 
 export function editMail(
@@ -49,7 +48,8 @@ export function editMail(
       sender: current.sender,
       timestamp: current.timestamp,
       priority: updates.priority ?? current.priority,
-      subject: sanitizeMessageField(sanitizeSubjectDelimiter(updates.subject ?? current.subject)),
+      // formatMessage escapes ` // ` in every field on serialization.
+      subject: sanitizeMessageField(updates.subject ?? current.subject),
       body: sanitizeMessageField(updates.body ?? current.body),
     };
     return updatedMessage;

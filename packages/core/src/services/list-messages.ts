@@ -1,5 +1,5 @@
 import { resolveMemberPaths } from "./member-paths";
-import { tryParseHeaderLine } from "../lib/message-format";
+import { tryParseHeaderLine, restoreDelimiters } from "../lib/message-format";
 import { writeFileAtomic } from "../lib/fs-atomic";
 import { MailboxNotFoundError } from "../domain/errors";
 import { MailboxRef, Message } from "../domain/types";
@@ -64,10 +64,11 @@ export function listMessages(input: ListMessagesInput): ListMessagesResult {
       // V3.0 BAC 2A — E5: join body lines once at flush time instead of
       // concatenating via template literal on every body line (O(n^2)
       // per message in pathological long bodies).
-      // The single-segment body parsed by `tryParseHeaderLine` is the seed;
-      // append any multi-line bodyLines collected after the header.
+      // The single-segment body parsed by `tryParseHeaderLine` is the seed
+      // (already restored); append any multi-line bodyLines collected after
+      // the header, still escaped on disk.
       const seed = current.message.body;
-      const extra = current.bodyLines.join("\n");
+      const extra = restoreDelimiters(current.bodyLines.join("\n"));
       current.message.body = extra.length === 0 ? seed : (seed.length === 0 ? extra : `${seed}\n${extra}`);
       collected.push(current.message);
     }

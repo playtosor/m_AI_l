@@ -3,6 +3,8 @@ import {
   tryParseHeaderLine,
   parseMessage,
   formatMessage,
+  escapeDelimiters,
+  restoreDelimiters,
   sanitizeSubjectDelimiter,
 } from "../lib/message-format";
 import { Message } from "../domain/types";
@@ -235,9 +237,9 @@ describe("message-format (V3.0 BAC 2A — T1)", () => {
       expect(sanitizeSubjectDelimiter("a // b // c")).toBe("a ∕∕ b ∕∕ c");
     });
 
-    it("formatMessage does NOT sanitize the subject (existing on-disk messages untouched)", () => {
-      // archive/delete/cancel paths use parse/format and must never rewrite
-      // stored content; only the write choke points call sanitizeSubjectDelimiter.
+    it("escapes ' // ' in every field (D3 — no phantom messages on re-read)", () => {
+      // formatMessage now escapes ` // ` to `‖` in ALL fields so a body line
+      // containing the delimiter can never be re-interpreted as a header.
       const message: Message = {
         sender: "ARCHI",
         timestamp: "20240115-1430",
@@ -245,7 +247,52 @@ describe("message-format (V3.0 BAC 2A — T1)", () => {
         subject: "a // b",
         body: "Body",
       };
-      expect(formatMessage(message)).toBe("ARCHI // 20240115-1430 // M // a // b // Body");
+      expect(formatMessage(message)).toBe("ARCHI // 20240115-1430 // M // a‖b // Body");
+    });
+  });
+
+  describe("escapeDelimiters / restoreDelimiters (Cycle — D3)", () => {
+    it("escapeDelimiters replaces every ' // ' with the escape character", () => {
+      expect(escapeDelimiters("a // b // c")).toBe("a‖b‖c");
+    });
+
+    it("escapeDelimiters leaves text without ' // ' unchanged", () => {
+      expect(escapeDelimiters("plain text")).toBe("plain text");
+    });
+
+    it("restoreDelimiters reverses escapeDelimiters", () => {
+      expect(restoreDelimiters("a‖b‖c")).toBe("a // b // c");
+      expect(restoreDelimiters(escapeDelimiters("x // y // z"))).toBe("x // y // z");
+    });
+  });
+
+  describe("formatMessage / tryParseHeaderLine — ' // ' in body round-trips (D3)", () => {
+    it("escapes a body containing ' // ' so it is not re-parsed as a header", () => {
+      const message: Message = {
+        sender: "ARCHI",
+        timestamp: "20240115-1430",
+        priority: "M",
+        subject: "Subj",
+        body: "line one // line two // line three // line four",
+      };
+      const serialized = formatMessage(message);
+
+      // The delimiter no longer appears inside the body segment.
+      expect(serialized).toBe("ARCHI // 20240115-1430 // M // Subj // line one‖line two‖line three‖line four");
+
+      const parsed = tryParseHeaderLine(serialized);
+      expect(parsed).not.toBeNull();
+      expect(parsed!.message.body).toBe("line one // line two // line three // line four");
+      expect(parsed!.message.subject).toBe("Subj");
+    });
+
+    it("a body line with ' // ' no longer produces a phantom header", () => {
+      // A raw body line carrying >= 3 ` // ` matches NO_PRIORITY_RE and, before
+      // D3, spawned a permuted phantom message (sender=timestamp,
+      // timestamp=route). The escaped form must not match the header shape.
+      const phantomLine = "20261013-0004 // COORDINATEUR/HUMAN -> COORDINATEUR/ARCHI // 3 // note";
+      expect(tryParseHeaderLine(phantomLine)).not.toBeNull(); // the bug
+      expect(tryParseHeaderLine(escapeDelimiters(phantomLine))).toBeNull(); // the fix
     });
   });
 });

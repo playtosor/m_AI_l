@@ -10,6 +10,43 @@ const CANONICAL_RE = /^(.+?) \/\/ (.+?) \/\/ (.+?) \/\/ (.+?) \/\/ ?(.*)$/;
 const NO_PRIORITY_RE = /^(.+?) \/\/ (.+?) \/\/ (.+?) \/\/ ?(.*)$/;
 
 /**
+ * Field delimiter and its escape character.
+ *
+ * The on-disk format is a bare ` // `-delimited header line followed by
+ * unprefixed, free-text body lines, with NO message terminator. The reader
+ * (`parseMailboxStateFromPath`, `listMessages`) is line-oriented: ANY line that
+ * matches the header shape starts a new message. A ` // ` sequence inside a
+ * field — most importantly inside a line of a multi-line body — is therefore
+ * re-interpreted as a field separator / new message, producing permuted
+ * "phantom" messages (adjudication D3).
+ *
+ * To keep the on-disk format unambiguous, every field is serialized with ` // `
+ * escaped to `‖` (U+2016 DOUBLE VERTICAL LINE), and the escape is restored to
+ * ` // ` on read. `‖` is a single character that does not occur in normal
+ * message text. This applies to newly written content only; existing on-disk
+ * messages are never migrated (adjudication D2).
+ */
+const DELIMITER = " // ";
+const ESCAPE = "\u2016"; // ‖ U+2016 DOUBLE VERTICAL LINE
+
+/**
+ * Replace every field delimiter ` // ` with the escape character. Applied to
+ * each field before serialization so a field value can never inject a
+ * delimiter (nor a header-looking body line).
+ */
+export function escapeDelimiters(text: string): string {
+  return text.split(DELIMITER).join(ESCAPE);
+}
+
+/**
+ * Reverse of `escapeDelimiters`: restore `‖` back to ` // `. Applied to every
+ * field after parsing so callers see the original text.
+ */
+export function restoreDelimiters(text: string): string {
+  return text.split(ESCAPE).join(DELIMITER);
+}
+
+/**
  * Normalize a priority value to H/M/L. Defaults to "M" for unknown values.
  */
 export function normalizePriority(value: string): Priority {
@@ -37,11 +74,11 @@ export function tryParseHeaderLine(line: string): { message: Message; warning_co
     }
     return {
       message: {
-        sender: sender.trim(),
-        timestamp: timestamp.trim(),
+        sender: restoreDelimiters(sender.trim()),
+        timestamp: restoreDelimiters(timestamp.trim()),
         priority,
-        subject: subject.trim(),
-        body,
+        subject: restoreDelimiters(subject.trim()),
+        body: restoreDelimiters(body),
       },
       warning_count,
     };
@@ -60,11 +97,11 @@ export function tryParseHeaderLine(line: string): { message: Message; warning_co
   }
   return {
     message: {
-      sender: sender.trim(),
-      timestamp: timestamp.trim(),
+      sender: restoreDelimiters(sender.trim()),
+      timestamp: restoreDelimiters(timestamp.trim()),
       priority: "M",
-      subject: subject.trim(),
-      body,
+      subject: restoreDelimiters(subject.trim()),
+      body: restoreDelimiters(body),
     },
     warning_count,
   };
@@ -82,21 +119,30 @@ export function parseMessage(line: string): Message {
 }
 
 /**
- * Format a message into the canonical ` // `-separated line.
+ * Format a message into the canonical ` // `-separated line. Every field is
+ * escaped (see `escapeDelimiters`) so the serialized line stays unambiguous
+ * even when a field contains ` // `.
  */
 export function formatMessage(message: Message): string {
-  return `${message.sender} // ${message.timestamp} // ${message.priority} // ${message.subject} // ${message.body}`;
+  return [
+    escapeDelimiters(message.sender),
+    escapeDelimiters(message.timestamp),
+    escapeDelimiters(message.priority),
+    escapeDelimiters(message.subject),
+    escapeDelimiters(message.body),
+  ].join(DELIMITER);
 }
 
 /**
- * The canonical message format splits a header line on ` // `:
- * `sender // timestamp // priority // subject // body`. A ` // ` sequence
- * inside the subject would be re-split at read time (cancel/edit then fail
- * to match the MessageKey, get_outbox throws). To keep the on-disk format
- * unambiguous, normalize ` // ` in subjects to ` ∕∕ ` (U+2215 division
- * slash) on WRITE ONLY. Existing on-disk messages are NEVER migrated,
- * re-parsed, or rewritten — this only affects newly written content
- * (SIMPLIFY #9 / adjudication D2).
+ * OUTBOX write guard. The outbox format is `timestamp // recipient // subject`,
+ * parsed by splitting on ` // ` and requiring three parts. A ` // ` inside the
+ * subject would break that split, so it is normalized to ` ∕∕ ` (U+2215 division
+ * slash) on WRITE ONLY. Existing on-disk entries are NEVER migrated, re-parsed,
+ * or rewritten — this only affects newly written content (SIMPLIFY #9 /
+ * adjudication D2).
+ *
+ * The mailbox path no longer uses this: it relies on `formatMessage` /
+ * `escapeDelimiters` (the `‖` escape) for every field, subject included.
  *
  * Not re-exported from the `src/index.ts` barrel: it is an internal write
  * guard, not part of the public service surface.

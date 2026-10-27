@@ -3,7 +3,7 @@ import { getMailboxPath, getArchivePath, getOutboxPath } from "../lib/paths";
 import { ensureSentinel, insertBeforeSentinel, resetFileWithSentinel } from "../lib/sentinel";
 import { writeFileAtomic } from "../lib/fs-atomic";
 import { FileOperationError, MessageConflictError } from "../domain/errors";
-import { tryParseHeaderLine, formatMessage } from "../lib/message-format";
+import { tryParseHeaderLine, formatMessage, restoreDelimiters } from "../lib/message-format";
 import { SENTINEL } from "../domain/constants";
 import fs from "fs";
 
@@ -325,11 +325,11 @@ export function parseMailboxStateFromPath(
   for (const item of items) {
     if (item.type === "entry") {
       // First raw_line is the header (parsing it set item.message.body to
-      // whatever the 5th regex group captured); subsequent lines are the
-      // multi-line body extension.
+      // whatever the 5th regex group captured, already restored); subsequent
+      // lines are the multi-line body extension, still escaped on disk.
       const extraBodyLines = item.raw_lines.slice(1);
       const seed = item.message.body;
-      const extra = extraBodyLines.join("\n");
+      const extra = restoreDelimiters(extraBodyLines.join("\n"));
       item.message.body =
         extra.length === 0
           ? seed

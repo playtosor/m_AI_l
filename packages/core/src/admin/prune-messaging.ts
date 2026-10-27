@@ -7,6 +7,7 @@ import { handlesEqual } from "../lib/handles";
 import { SENTINEL } from "../domain/constants";
 import { getCutoffDate, scanProject } from "../lib/prune-common";
 import { getProjects, getProject } from "../repositories/projects-repo";
+import { pruneActivityLog } from "../lib/activity-log";
 import type {
   PruneInput,
   PruneProjectResult,
@@ -187,6 +188,10 @@ export function adminPruneMessaging(input: PruneInput = {}): PruneResult {
 
     projects.push(projectResult);
   }
+
+  // D4: the cross-project activity log shares the mailbox prune retention
+  // window. Best-effort and only mutates on a real run (dry_run honoured).
+  pruneActivityLog(retentionDays, dryRun);
 
   const hasErrors = errors.length > 0;
   const hasWarnings = warnings.length > 0;

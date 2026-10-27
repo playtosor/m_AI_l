@@ -42,6 +42,34 @@ describe("mailbox-repo", () => {
     it("should throw error if mailbox does not exist", () => {
       expect(() => readMessages(projectPath, handle)).toThrow();
     });
+
+    it("round-trips a body containing ' // ' through write + read (no phantom)", () => {
+      fs.writeFileSync(mailboxFile, "<!-- END -->");
+      writeMessage(projectPath, handle, {
+        sender: "AGENT1",
+        timestamp: "20260325-1816",
+        priority: "M",
+        subject: "Subject",
+        body: "a // b // c // d",
+      });
+      const messages = readMessages(projectPath, handle);
+      expect(messages).toHaveLength(1);
+      expect(messages[0].body).toBe("a // b // c // d");
+    });
+
+    it("round-trips a multi-line body with ' // ' without spawning a phantom (D3)", () => {
+      fs.writeFileSync(mailboxFile, "<!-- END -->");
+      writeMessage(projectPath, handle, {
+        sender: "AGENT1",
+        timestamp: "20260325-1816",
+        priority: "M",
+        subject: "Subject",
+        body: "first\n20261013-0004 // A -> B // 3 // note",
+      });
+      const messages = readMessages(projectPath, handle);
+      expect(messages).toHaveLength(1);
+      expect(messages[0].body).toBe("first\n20261013-0004 // A -> B // 3 // note");
+    });
   });
 
 
