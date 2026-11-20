@@ -1,5 +1,5 @@
 // V2.11: regression tests for the case-insensitive lookups across core services.
-// These tests do not assert new functionality — they assert that a lowercase
+// These tests do not assert new functionality â€” they assert that a lowercase
 // caller still resolves the canonical uppercase roster entry. The pattern
 // (write fixture with UPPERCASE handle, query with mixed-case) is shared
 // across services to keep the regression matrix uniform.
@@ -16,8 +16,8 @@ const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "ci-handle-common-"));
 const rosterFile = path.join(tempDir, "roster.md");
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",

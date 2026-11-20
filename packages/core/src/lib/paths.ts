@@ -1,4 +1,4 @@
-import { COMMON_ROOT, PROJECTS_FILE } from "../domain/constants";
+import { resolveCommonRoot, PROJECTS_FILE } from "../domain/constants";
 import path from "path";
 
 export function getMailboxPath(projectPath: string, handle: string): string {
@@ -18,5 +18,5 @@ export function getRosterPath(projectPath: string, rosterPath?: string): string 
 }
 
 export function getProjectsPath(): string {
-  return path.join(COMMON_ROOT, PROJECTS_FILE);
+  return path.join(resolveCommonRoot(), PROJECTS_FILE);
 }

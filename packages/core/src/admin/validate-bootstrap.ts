@@ -1,12 +1,10 @@
 import fs from "fs";
 import path from "path";
-import { PROJECTS_FILE } from "../domain/constants";
+import { PROJECTS_FILE, PROJECTS_ARCHIVE_FILE } from "../domain/constants";
 import { parseMarkdownTableRow } from "../lib/markdown";
 import { handlesEqual } from "../lib/handles";
 import { ValidateInput, ValidateResult, CheckResult } from "./types";
-import { getCommonRoot, validateProjectsConfig } from "./util";
-
-const PROJECTS_ARCHIVE_FILE = "projects_config_archive.md";
+import { resolveCommonRoot, validateProjectsConfig } from "./util";
 
 export function validateMessagingBootstrap(
   input: ValidateInput = {}
@@ -20,7 +18,7 @@ export function validateMessagingBootstrap(
     checks: [],
   };
 
-  const COMMON_ROOT = getCommonRoot();
+  const COMMON_ROOT = resolveCommonRoot();
 
   // Check 1: projects_config.md exists
   const projectsPath = path.join(COMMON_ROOT, PROJECTS_FILE);

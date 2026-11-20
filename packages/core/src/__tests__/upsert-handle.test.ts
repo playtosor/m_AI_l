@@ -6,8 +6,8 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "test-upsert-"));
 const rosterFile = path.join(tempDir, "roster.md");
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: tempDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => tempDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
@@ -198,7 +198,7 @@ describe("upsert handle", () => {
         status: "active",
       });
 
-      // strict omitted → upsert behaviour preserved.
+      // strict omitted â†’ upsert behaviour preserved.
       const resultOmitted = upsertHandle({
         project_handle: "TESTPROJ",
         handle: "NON_STRICT",
@@ -208,7 +208,7 @@ describe("upsert handle", () => {
       expect(resultOmitted.status).toBe("updated");
       expect(resultOmitted.role).toBe("Updated (omitted)");
 
-      // strict=false explicit → same behaviour.
+      // strict=false explicit â†’ same behaviour.
       const resultFalse = upsertHandle({
         project_handle: "TESTPROJ",
         handle: "NON_STRICT",

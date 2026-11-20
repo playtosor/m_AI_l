@@ -1,9 +1,16 @@
 import { resolveOutboxPathFromMailboxPath, validateAbsoluteMailboxPath, resolveMailboxPathFromValue } from "../services/mail-routing";
 import { FileOperationError } from "../domain/errors";
 import { getProjects } from "../repositories/projects-repo";
-import { COMMON_ROOT } from "../domain/constants";
+import { resolveCommonRoot } from "../domain/constants";
 import fs from "fs";
+import os from "os";
 import path from "path";
+
+// Lazy resolution (D1/D4): COMMON_PATH must be set before any
+// validateAbsoluteMailboxPath call. A tmpdir keeps the test hermetic
+// instead of relying on the machine's real common folder.
+const commonRootDir = fs.mkdtempSync(path.join(os.tmpdir(), "mail-routing-common-"));
+process.env.COMMON_PATH = commonRootDir;
 
 jest.mock("../lib/paths", () => ({
   getProjectsPath: () => path.join(__dirname, "test_projects_config.md"),
@@ -25,7 +32,7 @@ describe("validateAbsoluteMailboxPath", () => {
   });
 
   it("accepts a path under COMMON_ROOT", () => {
-    const commonRoot = path.resolve(COMMON_ROOT);
+    const commonRoot = path.resolve(resolveCommonRoot());
     const testPath = path.join(commonRoot, "mailbox_test.md");
     expect(() => validateAbsoluteMailboxPath(testPath)).not.toThrow();
   });
@@ -73,7 +80,7 @@ describe("validateAbsoluteMailboxPath", () => {
   });
 
   it("rejects a path that is exactly COMMON_ROOT (not under it)", () => {
-    const commonRoot = path.resolve(COMMON_ROOT);
+    const commonRoot = path.resolve(resolveCommonRoot());
     expect(() => validateAbsoluteMailboxPath(commonRoot)).toThrow(FileOperationError);
   });
 
@@ -142,9 +149,14 @@ describe("resolveMailboxPathFromValue (WS3 #10)", () => {
   });
 
   it("honours an absolute mailbox path under COMMON_ROOT", () => {
-    const commonRoot = path.resolve(COMMON_ROOT);
+    const commonRoot = path.resolve(resolveCommonRoot());
     const absolutePath = path.join(commonRoot, "mailbox.md");
     const result = resolveMailboxPathFromValue(projectPath, "TEST", absolutePath);
     expect(result).toBe(absolutePath);
   });
+});
+
+afterAll(() => {
+  delete process.env.COMMON_PATH;
+  fs.rmSync(commonRootDir, { recursive: true, force: true });
 });

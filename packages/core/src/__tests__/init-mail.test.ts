@@ -7,8 +7,8 @@ const rosterFile = path.join(tempDir, "roster.md");
 const externalDir = fs.mkdtempSync(path.join(os.tmpdir(), "init-mail-external-test-"));
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: externalDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => externalDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",

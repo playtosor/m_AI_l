@@ -7,14 +7,13 @@ const externalDir = fs.mkdtempSync(path.join(os.tmpdir(), "m_AI_l_member-paths-e
 const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "m_AI_l_member-paths-common-"));
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
   MESSAGE_FORMAT: "HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body",
   HUMAN_HANDLE: "HUMAN",
-  getCommonRoot: () => commonDir,
 }));
 
 import {
@@ -24,7 +23,7 @@ import {
 import { RosterEntry } from "../domain/types";
 
 // ---------------------------------------------------------------------------
-// V3.0 BAC 2A — T5: drive member-paths.ts through project + roster catalogs.
+// V3.0 BAC 2A â€” T5: drive member-paths.ts through project + roster catalogs.
 // `resolveMemberPaths` depends on getProject + getRoster; we emulate both as
 // small in-test fixtures.
 // ---------------------------------------------------------------------------
@@ -74,7 +73,7 @@ jest.mock("../repositories/roster-repo", () => ({
   },
 }));
 
-describe("member-paths (V3.0 BAC 2A — T5)", () => {
+describe("member-paths (V3.0 BAC 2A â€” T5)", () => {
   beforeEach(() => {
     fs.mkdirSync(tempDir, { recursive: true });
     fs.mkdirSync(externalDir, { recursive: true });

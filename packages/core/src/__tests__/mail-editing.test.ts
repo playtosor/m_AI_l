@@ -9,6 +9,20 @@ import path from "path";
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "mail-editing-test-"));
 const rosterFile = path.join(tempDir, "roster.md");
 
+// Lazy resolution (D1/D4): correction-sent paths append to the activity log
+// under COMMON_PATH. Point the env at an isolated dir instead of the old
+// hardcoded fallback.
+const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "mail-editing-common-"));
+const originalCommonPath = process.env.COMMON_PATH;
+process.env.COMMON_PATH = commonDir;
+
+afterAll(() => {
+  if (originalCommonPath !== undefined) process.env.COMMON_PATH = originalCommonPath;
+  else delete process.env.COMMON_PATH;
+  fs.rmSync(tempDir, { recursive: true, force: true });
+  fs.rmSync(commonDir, { recursive: true, force: true });
+});
+
 jest.mock("../repositories/projects-repo", () => ({
   getProject: () => ({
     name: "TEST",

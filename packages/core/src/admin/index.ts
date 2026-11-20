@@ -1,7 +1,7 @@
 export { bootstrapCommonMessaging } from "./bootstrap-common";
 export { createMessagingProject } from "./create-project";
 export { validateMessagingBootstrap } from "./validate-bootstrap";
-export { getCommonRoot } from "./util";
+export { resolveCommonRoot } from "./util";
 export { adminPruneMessaging } from "./prune-messaging";
 export type {
   BootstrapCommonResult,

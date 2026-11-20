@@ -6,24 +6,23 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "m_AI_l_roster-utils-test-
 const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "m_AI_l_roster-utils-common-"));
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
   MESSAGE_FORMAT: "HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body",
   HUMAN_HANDLE: "HUMAN",
-  getCommonRoot: () => commonDir,
 }));
 
 import {
   ensureHumanInRoster,
   getHumanMailboxAbsolutePath,
-  HUMAN_ROSTER_LINE,
+  getHumanRosterLine,
 } from "../lib/roster-utils";
 
 // ---------------------------------------------------------------------------
-// V3.0 BAC 2A — T3: exercise ensureHumanInRoster idempotence, the legacy-row
+// V3.0 BAC 2A â€” T3: exercise ensureHumanInRoster idempotence, the legacy-row
 // rewrite path, and the documented TOCTOU-with-missing-roster behaviour.
 // ---------------------------------------------------------------------------
 
@@ -37,7 +36,7 @@ function readRoster(): string {
   return fs.readFileSync(path.join(tempDir, "roster.md"), "utf-8");
 }
 
-describe("roster-utils (V3.0 BAC 2A — T3) — ensureHumanInRoster", () => {
+describe("roster-utils (V3.0 BAC 2A â€” T3) â€” ensureHumanInRoster", () => {
   beforeEach(() => {
     fs.rmSync(tempDir, { recursive: true, force: true });
     fs.mkdirSync(tempDir, { recursive: true });
@@ -58,8 +57,8 @@ describe("roster-utils (V3.0 BAC 2A — T3) — ensureHumanInRoster", () => {
     });
 
     it("HUMAN_ROSTER_LINE uses the canonical absolute mailbox path", () => {
-      expect(HUMAN_ROSTER_LINE).toContain(getHumanMailboxAbsolutePath());
-      expect(HUMAN_ROSTER_LINE).toMatch(/\| HUMAN \| User \| .+ \| active \|/);
+      expect(getHumanRosterLine()).toContain(getHumanMailboxAbsolutePath());
+      expect(getHumanRosterLine()).toMatch(/\| HUMAN \| User \| .+ \| active \|/);
     });
   });
 
@@ -142,7 +141,7 @@ describe("roster-utils (V3.0 BAC 2A — T3) — ensureHumanInRoster", () => {
       ].join("\n");
       makeRoster(before);
 
-      // Legacy row is missing the canonical absolute path ⇒ helper should
+      // Legacy row is missing the canonical absolute path â‡’ helper should
       // consider HUMAN as "not canonical" and rewrite it.
       expect(ensureHumanInRoster(tempDir)).toBe(true);
 
@@ -162,7 +161,7 @@ describe("roster-utils (V3.0 BAC 2A — T3) — ensureHumanInRoster", () => {
       makeRoster(before);
 
       // hasCanonicalHuman is false (status !== 'active'), but humanLineIndex
-      // is set and matches no legacy detection ⇒ branch rewrites to canonical.
+      // is set and matches no legacy detection â‡’ branch rewrites to canonical.
       expect(ensureHumanInRoster(tempDir)).toBe(true);
 
       const after = readRoster();

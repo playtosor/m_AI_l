@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { validateMessagingBootstrap } from "../../packages/core/src/admin";
 
-import { getCommonRoot } from "../../packages/core/src/admin/util";
+import { resolveCommonRoot } from "../../packages/core/src/admin/util";
 interface CliArgs {
   projectHandle?: string;
   dryRun?: boolean;
@@ -25,7 +25,7 @@ function parseArgs(): CliArgs {
 
 function main() {
   const args = parseArgs();
-  const COMMON_ROOT = getCommonRoot();
+  const COMMON_ROOT = resolveCommonRoot();
 
   console.error(`[admin_validate_messaging_bootstrap] COMMON_PATH=${COMMON_ROOT}`);
 

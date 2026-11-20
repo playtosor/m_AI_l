@@ -1,15 +1,9 @@
-function readEnvPath(name: string, fallback: string): string {
- const value = process.env[name]?.trim();
- if (value && value.length > 0) return value;
- console.warn(`[m_AI_l] Env var ${name} not set — using fallback: ${fallback}`);
- return fallback;
-}
+import { readHomeConfig } from "../lib/home-config";
 
-export const PROJECT_ROOT = readEnvPath("PROJECT_ROOT", "C:\\dev\\m_AI_l_EXPORT");
-export const COMMON_ROOT = readEnvPath("COMMON_PATH", "C:\\dev\\common");
 export const SENTINEL = "<!-- END -->";
 export const ROSTER_FILE = "roster.md";
 export const PROJECTS_FILE = "projects_config.md";
+export const PROJECTS_ARCHIVE_FILE = "projects_config_archive.md";
 
 /**
  * V3.0 BAC 2A follow-up: canonical roster header (markdown table header +
@@ -83,9 +77,30 @@ export const POST_CREATE_HOOK_ENV_ALLOWLIST: readonly string[] = (
 ]
 );
 
-export function getCommonRoot(): string {
- const value = process.env.COMMON_PATH?.trim();
- if (value && value.length > 0) return value;
- console.warn(`[m_AI_l] Env var COMMON_PATH not set — using fallback: C:\\dev\\common`);
- return "C:\\dev\\common";
+/**
+ * V3.x COMMON-PATH: lazy root resolution (D1/D2/D4).
+ *
+ * Chain: env var -> home config (~/.m_ai_l/config.json) -> actionable error.
+ * No silent fallback, no warn-and-continue, no memoization: the chain is
+ * re-evaluated on every call so a home config written mid-session (e.g. by
+ * the ARO skill) is picked up without a server restart.
+ *
+ * Malformed home config throws ConfigCorruptionError (D7, via readHomeConfig).
+ */
+function resolveRootFrom(envName: "COMMON_PATH" | "PROJECT_ROOT", homeKey: "commonPath" | "projectRoot"): string {
+  const fromEnv = process.env[envName]?.trim();
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  const fromHome = readHomeConfig()[homeKey]?.trim();
+  if (fromHome && fromHome.length > 0) return fromHome;
+  throw new Error(
+    `${envName} is not configured. Set the ${envName} environment variable in your MCP client config, or run the ARO skill once to register your common folder.`
+  );
+}
+
+export function resolveCommonRoot(): string {
+  return resolveRootFrom("COMMON_PATH", "commonPath");
+}
+
+export function resolveProjectRoot(): string {
+  return resolveRootFrom("PROJECT_ROOT", "projectRoot");
 }

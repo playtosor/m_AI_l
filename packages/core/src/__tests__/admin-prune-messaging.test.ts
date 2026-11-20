@@ -7,13 +7,12 @@ const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "m_AI_l_prune-common-"))
 
 // Mock constants.ts AVANT tout import
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
   MESSAGE_FORMAT: "HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body",
-  getCommonRoot: () => commonDir,
 }));
 
 // Mock paths.ts pour que getProjectsPath retourne commonDir/projects_config.md
@@ -27,7 +26,7 @@ jest.mock("../lib/paths", () => {
 
 import { adminPruneMessaging } from "../admin/prune-messaging";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function setupTestProject(handle: string, files: Record<string, string>) {
   const projectDir = path.join(tempDir, handle);
@@ -61,7 +60,7 @@ function cleanup() {
   }
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe("adminPruneMessaging V2", () => {
   beforeEach(() => {
@@ -74,7 +73,7 @@ describe("adminPruneMessaging V2", () => {
     cleanup();
   });
 
-  test("Cas 1: dry_run n'écrit rien, plan d'action complet", () => {
+  test("Cas 1: dry_run n'Ã©crit rien, plan d'action complet", () => {
     const projectDir = setupTestProject("MAILEXPORT", {
       "mailbox_ARCHI_archive.md": `ARCHI // 20230101-1200 // P1 // Old // Body1
 ARCHI // 20240115-1430 // P1 // Recent // Body2
@@ -96,7 +95,7 @@ ARCHI // 20240115-1430 // P1 // Recent // Body2
     expect(project!.actions.every(a => a.startsWith("would_"))).toBe(true);
   });
 
-  test("Cas 2: exécution déplace vers pruned/ + sentinel présent", () => {
+  test("Cas 2: exÃ©cution dÃ©place vers pruned/ + sentinel prÃ©sent", () => {
     const projectDir = setupTestProject("MAILEXPORT", {
       "mailbox_ARCHI_archive.md": `ARCHI // 20230101-1200 // P1 // Old // Body1
 <!-- END -->`,
@@ -136,7 +135,7 @@ ARCHI // 20240115-1430 // P1 // Recent // Body2
     expect(result.projects[0].project_handle).toBe("PROJECT_A");
   });
 
-  test("Cas 2b: idempotence — re-run après move ne duplique pas les entrées", () => {
+  test("Cas 2b: idempotence â€” re-run aprÃ¨s move ne duplique pas les entrÃ©es", () => {
     const projectDir = setupTestProject("MAILEXPORT", {
       "mailbox_ARCHI_archive.md": `ARCHI // 20230101-1200 // P1 // Old // Body1
 ARCHI // 20240115-1430 // P1 // Recent // Body2

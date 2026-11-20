@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createMessagingProject } from "../../packages/core/src/admin";
 
-import { getCommonRoot } from "../../packages/core/src/admin/util";
+import { resolveCommonRoot } from "../../packages/core/src/admin/util";
 interface CliArgs {
   projectHandle?: string;
   projectPath?: string;
@@ -37,7 +37,7 @@ function parseArgs(): CliArgs {
 
 function main() {
   const args = parseArgs();
-  const COMMON_ROOT = getCommonRoot();
+  const COMMON_ROOT = resolveCommonRoot();
 
   if (!args.projectHandle) {
     console.error("Error: --project-handle is required");

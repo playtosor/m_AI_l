@@ -6,8 +6,8 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "test-archive-msg-"));
 const rosterFile = path.join(tempDir, "roster.md");
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: tempDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => tempDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",

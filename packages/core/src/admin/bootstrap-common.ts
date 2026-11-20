@@ -1,20 +1,18 @@
 import fs from "fs";
 import path from "path";
-import { PROJECTS_FILE, ROSTER_HEADER } from "../domain/constants";
+import { PROJECTS_FILE, PROJECTS_ARCHIVE_FILE, ROSTER_HEADER } from "../domain/constants";
 import { writeFileAtomic } from "../lib/fs-atomic";
 import { parseMarkdownTableRow } from "../lib/markdown";
 import { handlesEqual } from "../lib/handles";
 import { ensureHumanInRoster } from "../lib/roster-utils";
 import { getProjects } from "../repositories/projects-repo";
 import { BootstrapCommonInput, BootstrapCommonResult } from "./types";
-import { getCommonRoot, validateProjectsConfig } from "./util";
-
-const PROJECTS_ARCHIVE_FILE = "projects_config_archive.md";
+import { resolveCommonRoot, validateProjectsConfig } from "./util";
 
 export function bootstrapCommonMessaging(
   input: BootstrapCommonInput = {}
 ): BootstrapCommonResult {
-  const COMMON_ROOT = getCommonRoot();
+  const COMMON_ROOT = resolveCommonRoot();
   const result: BootstrapCommonResult = {
     status: "ok",
     common_path: COMMON_ROOT,
@@ -89,7 +87,7 @@ export function bootstrapCommonMessaging(
 
   // V2.9: ensure HUMAN is present in COMMON roster (idempotent migration).
   if (!dryRun && fs.existsSync(rosterPath)) {
-    const added = ensureHumanInRoster(COMMON_ROOT, rosterPath);
+    const added = ensureHumanInRoster(COMMON_ROOT, rosterPath, COMMON_ROOT);
     if (added) {
       result.updated.push("roster.md (HUMAN)");
     }
@@ -103,7 +101,7 @@ export function bootstrapCommonMessaging(
       const projects = getProjects();
       for (const project of projects) {
         if (!project.path || project.path === COMMON_ROOT) continue;
-        const added = ensureHumanInRoster(project.path, project.roster);
+        const added = ensureHumanInRoster(project.path, project.roster, COMMON_ROOT);
         if (added) {
           result.updated.push(`${project.name} (HUMAN)`);
         }

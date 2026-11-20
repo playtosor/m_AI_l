@@ -1,4 +1,4 @@
-import { COMMON_ROOT, HUMAN_HANDLE } from "../domain/constants";
+import { resolveCommonRoot, HUMAN_HANDLE } from "../domain/constants";
 import { getRosterPath } from "./paths";
 import { writeFileAtomic } from "./fs-atomic";
 import { isMarkdownSeparatorRow, parseMarkdownTableRow } from "./markdown";
@@ -12,16 +12,22 @@ import path from "path";
  * its own physical mailbox file.
  */
 export function getHumanMailboxAbsolutePath(): string {
-  return path.join(COMMON_ROOT, "mailbox_HUMAN.md");
+  return path.join(resolveCommonRoot(), "mailbox_HUMAN.md");
 }
 
 /**
  * Canonical HUMAN roster entry line. Uses an absolute mailbox path so that
  * any project whose roster holds this entry resolves to the same physical
  * file regardless of `project_path`.
+ *
+ * Function, not const (D4): the mailbox path resolves lazily (env / home
+ * config) and must not be frozen at import time. `mailboxPath` lets a caller
+ * that already resolved COMMON_ROOT pass the derived path, avoiding a second
+ * resolution per invocation.
  */
-export const HUMAN_ROSTER_LINE =
-  `| HUMAN | User | ${getHumanMailboxAbsolutePath()} | active |`;
+export function getHumanRosterLine(mailboxPath?: string): string {
+  return `| HUMAN | User | ${mailboxPath ?? getHumanMailboxAbsolutePath()} | active |`;
+}
 
 /**
  * Ensures the HUMAN entry is present in a project's roster. Idempotent:
@@ -53,13 +59,21 @@ export const HUMAN_ROSTER_LINE =
  * canonical entry. A legacy `mailbox_HUMAN.md` (relative) line is rewritten
  * to the canonical absolute-path variant.
  */
-export function ensureHumanInRoster(projectPath: string, rosterOverride?: string): boolean {
+export function ensureHumanInRoster(projectPath: string, rosterOverride?: string, commonRoot?: string): boolean {
   const rosterPath = getRosterPath(projectPath, rosterOverride);
   if (!fs.existsSync(rosterPath)) {
     // Nothing to update if the roster itself doesn't exist yet. `init-mail`
     // is responsible for creating it, then may call this helper afterwards.
     return false;
   }
+
+  // Resolve once per invocation: the comparison below runs per roster row,
+  // so hoisting keeps the home-config read count at one (or zero when the
+  // caller passes its already-resolved commonRoot).
+  const humanMailboxPath = commonRoot
+    ? path.join(commonRoot, "mailbox_HUMAN.md")
+    : getHumanMailboxAbsolutePath();
+  const humanRosterLine = getHumanRosterLine(humanMailboxPath);
 
   const content = fs.readFileSync(rosterPath, "utf-8");
   const lines = content.split("\n");
@@ -73,7 +87,7 @@ export function ensureHumanInRoster(projectPath: string, rosterOverride?: string
     const cells = parseMarkdownTableRow(line);
     if (cells[0] === HUMAN_HANDLE) {
       humanLineIndex = i;
-      if (cells[2] === getHumanMailboxAbsolutePath() && cells[3] === "active") {
+      if (cells[2] === humanMailboxPath && cells[3] === "active") {
         hasCanonicalHuman = true;
         break;
       }
@@ -86,9 +100,9 @@ export function ensureHumanInRoster(projectPath: string, rosterOverride?: string
 
   if (humanLineIndex >= 0) {
     // Replace legacy HUMAN line (mailbox_HUMAN.md relative) with canonical absolute path.
-    lines[humanLineIndex] = HUMAN_ROSTER_LINE;
+    lines[humanLineIndex] = humanRosterLine;
   } else {
-    lines.push(HUMAN_ROSTER_LINE);
+    lines.push(humanRosterLine);
   }
 
   writeFileAtomic(rosterPath, lines.join("\n"));

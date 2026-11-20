@@ -1,18 +1,19 @@
 import fs from "fs";
-import { getCommonRoot } from "../domain/constants";
+import { resolveCommonRoot } from "../domain/constants";
 import { parseMarkdownTableRow, isMarkdownSeparatorRow } from "../lib/markdown";
 
-export { getCommonRoot };
+export { resolveCommonRoot };
 
-export function validateProjectsConfig(projectsPath: string): "ok" | "empty" | "malformed" {
-  const content = fs.readFileSync(projectsPath, "utf-8");
+export function validateProjectsConfig(projectsPath: string, content?: string): "ok" | "empty" | "malformed" {
+  // `content` lets callers that already read the file avoid a second read.
+  const raw = content ?? fs.readFileSync(projectsPath, "utf-8");
 
   // Check if empty
-  if (content.trim().length === 0) {
+  if (raw.trim().length === 0) {
     return "empty";
   }
 
-  const lines = content.split("\n").map(l => l.trim()).filter(l => l.startsWith("|"));
+  const lines = raw.split("\n").map(l => l.trim()).filter(l => l.startsWith("|"));
 
   // Check if has valid header
   const hasHeader = lines.some(l => {

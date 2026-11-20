@@ -5,18 +5,17 @@ import path from "path";
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "m_AI_l_config-persistence-test-"));
 const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "m_AI_l_config-persistence-common-"));
 
-// V3.0 BAC 2A — T2: drive the config persistence layer end-to-end.
+// V3.0 BAC 2A â€” T2: drive the config persistence layer end-to-end.
 // We mock `domain/constants` so COMMON_ROOT maps to our temp commonDir and
 // project config paths resolve under tempDir.
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
   MESSAGE_FORMAT: "HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body",
   HUMAN_HANDLE: "HUMAN",
-  getCommonRoot: () => commonDir,
 }));
 
 // Import AFTER the mock so the module evaluates with our temp COMMON_ROOT.
@@ -33,7 +32,7 @@ import {
 } from "../lib/config-persistence";
 import { getPostCreateHookStatus, runPostCreateHook } from "../services/post-create-hook";
 
-describe("config-persistence (V3.0 BAC 2A — T2)", () => {
+describe("config-persistence (V3.0 BAC 2A â€” T2)", () => {
   beforeEach(() => {
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
@@ -110,7 +109,7 @@ describe("config-persistence (V3.0 BAC 2A — T2)", () => {
       expect(readGlobalConfig()).toEqual(payload);
     });
 
-    it("surfaces corruption (not silently {}) — SIMPLIFY critical-feedback #13", () => {
+    it("surfaces corruption (not silently {}) â€” SIMPLIFY critical-feedback #13", () => {
       // Present-but-corrupt global config must be surfaced, not returned as {}.
       fs.writeFileSync(
         path.join(commonDir, ".messaging-global-config.json"),
@@ -145,7 +144,7 @@ describe("config-persistence (V3.0 BAC 2A — T2)", () => {
   });
 
   describe("project config validation (validateProjectConfig)", () => {
-    it("rejects non-object JSON (array) → throws ConfigCorruptionError", () => {
+    it("rejects non-object JSON (array) â†’ throws ConfigCorruptionError", () => {
       fs.writeFileSync(
         path.join(tempDir, ".messaging-config.json"),
         "[]",
@@ -176,7 +175,7 @@ describe("config-persistence (V3.0 BAC 2A — T2)", () => {
   });
 
   describe("global config validation (validateGlobalConfig)", () => {
-    it("rejects post_create_hook.mode that is not 'command' → throws ConfigCorruptionError", () => {
+    it("rejects post_create_hook.mode that is not 'command' â†’ throws ConfigCorruptionError", () => {
       fs.writeFileSync(
         path.join(commonDir, ".messaging-global-config.json"),
         JSON.stringify({ post_create_hook: { enabled: true, mode: "exec", command_path: "x", payload_mode: "stdin_json" } }),
@@ -185,7 +184,7 @@ describe("config-persistence (V3.0 BAC 2A — T2)", () => {
       expect(() => readGlobalConfig()).toThrow(/Corrupt/);
     });
 
-    it("rejects post_create_hook.payload_mode that is not 'stdin_json' → throws ConfigCorruptionError", () => {
+    it("rejects post_create_hook.payload_mode that is not 'stdin_json' â†’ throws ConfigCorruptionError", () => {
       fs.writeFileSync(
         path.join(commonDir, ".messaging-global-config.json"),
         JSON.stringify({ post_create_hook: { enabled: true, mode: "command", command_path: "x", payload_mode: "env" } }),
@@ -194,7 +193,7 @@ describe("config-persistence (V3.0 BAC 2A — T2)", () => {
       expect(() => readGlobalConfig()).toThrow(/Corrupt/);
     });
 
-    it("rejects post_create_hook.enabled that is not boolean → throws ConfigCorruptionError", () => {
+    it("rejects post_create_hook.enabled that is not boolean â†’ throws ConfigCorruptionError", () => {
       fs.writeFileSync(
         path.join(commonDir, ".messaging-global-config.json"),
         JSON.stringify({ post_create_hook: { enabled: "yes", mode: "command", command_path: "x", payload_mode: "stdin_json" } }),
@@ -203,7 +202,7 @@ describe("config-persistence (V3.0 BAC 2A — T2)", () => {
       expect(() => readGlobalConfig()).toThrow(/Corrupt/);
     });
 
-    it("rejects post_create_hook.command_path that is not string → throws ConfigCorruptionError", () => {
+    it("rejects post_create_hook.command_path that is not string â†’ throws ConfigCorruptionError", () => {
       fs.writeFileSync(
         path.join(commonDir, ".messaging-global-config.json"),
         JSON.stringify({ post_create_hook: { enabled: true, mode: "command", command_path: 42, payload_mode: "stdin_json" } }),

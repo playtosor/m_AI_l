@@ -8,6 +8,7 @@
 // (D12): malformed lines are skipped, a missing log yields [] and exit 0.
 
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 const DEFAULT_LIMIT = 50;
@@ -18,12 +19,41 @@ const MAX_LIMIT = 500;
 const MIN_FIELD_COUNT = 5;
 const MAX_FIELD_COUNT = 6;
 
-// Mirrors core `domain/constants.ts` (readEnvPath): COMMON_PATH env wins,
-// otherwise the same fallback. Kept inline so the CLI stays standalone
-// (no runtime dependency on the @m_ai_l/core build).
+// Mirrors core `domain/constants.ts` (resolveCommonRoot): COMMON_PATH env
+// wins, otherwise ~/.m_ai_l/config.json (commonPath key), otherwise an
+// actionable error (no silent fallback). Kept inline so the CLI stays
+// standalone (no runtime dependency on the @m_ai_l/core build).
+function readHomeConfig() {
+  // Same semantics as core's os.homedir()-based path (D5 parity).
+  const home = os.homedir();
+  if (!home) return {};
+  const configPath = path.join(home, ".m_ai_l", "config.json");
+  if (!fs.existsSync(configPath)) return {};
+
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  } catch (error) {
+    throw new Error(`Corrupt home config at ${configPath}: ${error.message}`);
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`Corrupt home config at ${configPath}: Home config must be a JSON object`);
+  }
+  if (parsed.commonPath !== undefined && typeof parsed.commonPath !== "string") {
+    throw new Error(`Corrupt home config at ${configPath}: commonPath must be a string`);
+  }
+  return parsed;
+}
+
 function resolveCommonRoot() {
-  const value = process.env.COMMON_PATH && process.env.COMMON_PATH.trim();
-  return value && value.length > 0 ? value : "C:\\dev\\common";
+  const envValue = process.env.COMMON_PATH && process.env.COMMON_PATH.trim();
+  if (envValue && envValue.length > 0) return envValue;
+  const homeConfig = readHomeConfig();
+  const homeValue = homeConfig.commonPath && homeConfig.commonPath.trim();
+  if (homeValue && homeValue.length > 0) return homeValue;
+  throw new Error(
+    "COMMON_PATH is not configured. Set the COMMON_PATH environment variable in your MCP client config, or run the ARO skill once to register your common folder."
+  );
 }
 
 function parseArgs(argv) {
@@ -111,8 +141,8 @@ function main() {
 
 try {
   main();
-  process.exit(0);
+  process.exitCode = 0;
 } catch (error) {
   console.error(`[activity-feed] Error: ${error.message}`);
-  process.exit(1);
+  process.exitCode = 1;
 }

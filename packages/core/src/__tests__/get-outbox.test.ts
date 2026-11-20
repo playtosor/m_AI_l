@@ -7,8 +7,8 @@ const rosterFile = path.join(tempDir, "roster.md");
 const externalDir = fs.mkdtempSync(path.join(os.tmpdir(), "get-outbox-external-test-"));
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: externalDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => externalDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
@@ -78,8 +78,8 @@ describe("get-outbox service", () => {
     expect(outbox[0].subject).toBe("Ping");
   });
 
-  // V2.5 SIMPLIFY WS5 — Finding #13: error-path coverage for get-outbox.
-  // (REVISTED: the previous try/catch wrapper was tautological — tautology
+  // V2.5 SIMPLIFY WS5 â€” Finding #13: error-path coverage for get-outbox.
+  // (REVISTED: the previous try/catch wrapper was tautological â€” tautology
   // removed, explicit assertions on actual documented behaviour.)
 
   it("throws FileOperationError when the outbox file is missing", () => {
@@ -88,7 +88,7 @@ describe("get-outbox service", () => {
       "| Handle | Role | Mailbox | Status |\n|--------|------|---------|--------|\n" +
         "| AGENT_MISSING | x | mailbox_AGENT.md | active |\n"
     );
-    // No outbox file is created → getOutboxFromPath throws at fs.existsSync.
+    // No outbox file is created â†’ getOutboxFromPath throws at fs.existsSync.
     expect(() => getOutboxService("TEST", "AGENT_MISSING")).toThrow(FileOperationError);
   });
 

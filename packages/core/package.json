@@ -1,6 +1,6 @@
 {
   "name": "@m_ai_l/core",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "m_AI_l async inter-agent messaging core",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

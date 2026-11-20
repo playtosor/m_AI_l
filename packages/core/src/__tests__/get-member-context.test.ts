@@ -2,7 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-// Capture HUMAN_HANDLE BEFORE jest.mock hoists — the mock factory below
+// Capture HUMAN_HANDLE BEFORE jest.mock hoists â€” the mock factory below
 // otherwise shadows the real constant for values resolved via domain/constants.
 const { HUMAN_HANDLE } = jest.requireActual("../domain/constants") as typeof import("../domain/constants");
 
@@ -12,8 +12,8 @@ const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "get-member-context-comm
 const externalDir = fs.mkdtempSync(path.join(os.tmpdir(), "get-member-context-external-test-"));
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",

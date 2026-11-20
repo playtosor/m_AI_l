@@ -10,8 +10,8 @@ const externalDir = fs.mkdtempSync(path.join(os.tmpdir(), "write-mail-external-t
 const senderDir = fs.mkdtempSync(path.join(os.tmpdir(), "write-mail-sender-external-test-"));
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",

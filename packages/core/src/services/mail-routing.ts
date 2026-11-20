@@ -1,6 +1,6 @@
 import { RosterEntry } from "../domain/types";
 import { RosterEntryInactiveError, RosterEntryNotFoundError, FileOperationError } from "../domain/errors";
-import { COMMON_ROOT } from "../domain/constants";
+import { resolveCommonRoot } from "../domain/constants";
 import { getProjects } from "../repositories/projects-repo";
 import { isProjectActive } from "../lib/project-status";
 import { handlesEqual, normalizeHandle } from "../lib/handles";
@@ -18,7 +18,7 @@ export function validateAbsoluteMailboxPath(mailboxPath: string): void {
   const normalizedPath = path.resolve(mailboxPath).toLowerCase();
 
   // Vérifier sous COMMON_ROOT
-  const commonRoot = path.resolve(COMMON_ROOT).toLowerCase();
+  const commonRoot = path.resolve(resolveCommonRoot()).toLowerCase();
   if (normalizedPath.startsWith(commonRoot + path.sep)) {
     return; // OK
   }

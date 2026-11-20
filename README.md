@@ -26,22 +26,47 @@ Requirements: Node.js >= 18, pnpm >= 9.
 ```bash
 pnpm install
 pnpm -r build     # compiles packages/core and packages/mcp
-pnpm -r test      # 361 tests / 46 suites
+pnpm -r test      # 401 tests
 ```
 
 Consumers:
 
-- As an npm package: `@m_ai_l/core` (library) and `@m_ai_l/mcp` (server with
-  bundled `dist/server.bundle.js` and a `m-ai-l-mcp` bin).
+- As an npm package: `@m_ai_l/core` (library) and `@m_ai_l/mcp` (bundled server
+  bin `m-ai-l-mcp` + activity feed CLI bin `m-ai-l-activity-feed`).
+- As a Claude Code / ZCode plugin: `m-ai-l-mailbox` (see `plugin/`), distributed
+  via the GitHub marketplace (`.claude-plugin/marketplace.json` at repo root).
 - As an OpenCode plugin: `tools/mailbox.ts` loads `@m_ai_l/core` via
   `MAILBOX_LIBRARY_PATH` (defaults to `packages/core/dist/index.js`).
 
 ## Quickstart
 
+### From npm (consumers)
+
+Add the server to your MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "m-ai-l": {
+      "command": "npx",
+      "args": ["-y", "-p", "@m_ai_l/mcp", "m-ai-l-mcp"],
+      "env": { "COMMON_PATH": "C:/dev/common" }
+    }
+  }
+}
+```
+
+Use the `-p <package> <bin>` form — the package ships two bins, so bare
+`npx @m_ai_l/mcp` is ambiguous. Prereleases live under the `next` dist-tag
+(`-p @m_ai_l/mcp@next`). Then run the ARO skill (`skills/messaging/aro.md`)
+for guided setup, or call `get_projects` / `init_mail` / `write_mail` directly.
+
+### From source (contributors)
+
 Configure the project registry path, then point an MCP client at the server:
 
 ```bash
-# Defaults: C:\dev\common (COMMON_PATH), C:\dev\m_AI_l_EXPORT (PROJECT_ROOT)
+# COMMON_PATH: env var, else ~/.m_ai_l/config.json (commonPath), else actionable error
 set COMMON_PATH=C:\dev\common
 node packages/mcp/dist/server.js
 ```
@@ -65,6 +90,20 @@ Read the inbox of a handle in a project:
 ```
 mailbox({ action: "mail", project_handle: "MAILEXPORT", handle: "AGENT1" })
 ```
+
+## Configuration
+
+`COMMON_PATH` (and `PROJECT_ROOT`) are resolved lazily on every call:
+
+1. Environment variable (`COMMON_PATH` / `PROJECT_ROOT`)
+2. Home config `~/.m_ai_l/config.json` — `{ "commonPath": "...", "projectRoot": "..." }` (Windows: `%USERPROFILE%\.m_ai_l\config.json`)
+3. Actionable error: "COMMON_PATH is not configured. Set the COMMON_PATH environment variable in your MCP client config, or run the ARO skill once to register your common folder."
+
+No hardcoded fallback. Resolution is not memoized: a home config written
+mid-session (e.g. by ARO) is picked up without a restart. A present-but-corrupt
+home config raises `ConfigCorruptionError` — never silently ignored. The
+activity feed CLI resolves `COMMON_PATH` with the same chain (exit 1 + stderr
+on missing or corrupt config).
 
 ## Concepts
 
@@ -138,10 +177,22 @@ conflict error.
 ## Skills
 
 `skills/messaging/` ships instruction files (`mailbox_read.md`,
-`mailbox_write.md`) for harnesses without MCP support, with a filesystem
-fallback.
+`mailbox_write.md`, `aro.md` — guided onboarding) for harnesses without MCP
+support, with a filesystem fallback.
 When MCP is available, prefer the tools — the skills cost more tokens per
 message. See `skills/README.md`.
+
+## Activity feed
+
+Every send is appended to `[COMMON_PATH]/activity.log` (best-effort, 30-day
+retention via prune). Read it as JSON with the CLI bin — intentionally not an
+MCP tool:
+
+```bash
+npx -y -p @m_ai_l/mcp m-ai-l-activity-feed --since 2026-11-01 --limit 20
+```
+
+Newest first; missing log yields `[]` (exit 0); malformed lines are skipped.
 
 ## License
 

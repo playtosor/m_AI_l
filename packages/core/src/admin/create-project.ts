@@ -6,7 +6,7 @@ import { parseMarkdownTableRow } from "../lib/markdown";
 import { ensureHumanInRoster } from "../lib/roster-utils";
 import { handlesEqual } from "../lib/handles";
 import { CreateProjectInput, CreateProjectResult } from "./types";
-import { getCommonRoot, validateProjectsConfig } from "./util";
+import { resolveCommonRoot, validateProjectsConfig } from "./util";
 
 export function createMessagingProject(
   input: CreateProjectInput
@@ -21,7 +21,7 @@ export function createMessagingProject(
     errors: [],
   };
 
-  const COMMON_ROOT = getCommonRoot();
+  const COMMON_ROOT = resolveCommonRoot();
   const projectPathMode = input.project_path_mode ?? "strict";
   const projectStatus = input.status ?? "active";
   const dryRun = input.dry_run ?? false;
@@ -71,8 +71,11 @@ export function createMessagingProject(
     return result;
   }
 
-  // Validate existing projects_config.md
-  const validation = validateProjectsConfig(projectsPath);
+  // Validate existing projects_config.md (single read, reused for the
+  // duplicate check and the append below — nothing writes the file in
+  // between, so the content is stable across the three uses).
+  const projectsContent = fs.readFileSync(projectsPath, "utf-8");
+  const validation = validateProjectsConfig(projectsPath, projectsContent);
   if (validation === "empty") {
     result.errors.push(`projects_config.md exists but is empty. V1 does not repair existing files.`);
     result.status = "error";
@@ -84,7 +87,7 @@ export function createMessagingProject(
   }
 
   // Check for duplicate project_handle
-  const projectCheck = checkProjectExists(projectsPath, input.project_handle);
+  const projectCheck = checkProjectExists(projectsContent, input.project_handle);
   if (projectCheck === "exists") {
     result.warnings.push(`Project ${input.project_handle} already exists in projects_config.md`);
     // Still continue to ensure roster exists
@@ -109,7 +112,7 @@ export function createMessagingProject(
   // so an ensureHumanInRoster failure prevents partial registration (natural
   // rollback: no project entry written, no roster mutated).
   if (!dryRun) {
-    const added = ensureHumanInRoster(input.project_path, rosterPath);
+    const added = ensureHumanInRoster(input.project_path, rosterPath, COMMON_ROOT);
     if (added) {
       result.updated.push("roster.md (HUMAN)");
     }
@@ -119,8 +122,7 @@ export function createMessagingProject(
   if (projectCheck === "not_found") {
     if (!dryRun) {
       const entry = `| ${input.project_handle} | ${input.project_path} | ${rosterPath} | - | ${projectStatus} |\n`;
-      const currentContent = fs.readFileSync(projectsPath, "utf-8");
-      writeFileAtomic(projectsPath, currentContent + entry);
+      writeFileAtomic(projectsPath, projectsContent + entry);
     }
     result.updated.push(PROJECTS_FILE);
   }
@@ -136,11 +138,10 @@ export function createMessagingProject(
 }
 
 function checkProjectExists(
-  projectsPath: string,
+  projectsContent: string,
   projectHandle: string
 ): "exists" | "not_found" | "error" {
-  const content = fs.readFileSync(projectsPath, "utf-8");
-  const lines = content.split("\n").map(l => l.trim()).filter(l => l.startsWith("|"));
+  const lines = projectsContent.split("\n").map(l => l.trim()).filter(l => l.startsWith("|"));
 
   const projectLine = lines.find(l => {
     const parts = parseMarkdownTableRow(l);

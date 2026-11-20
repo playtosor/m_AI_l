@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { COMMON_ROOT } from "../domain/constants";
+import { resolveCommonRoot } from "../domain/constants";
 import {
   ProjectMessagingConfig,
   GlobalMessagingConfig,
@@ -108,7 +108,7 @@ export function writeProjectConfig(
  * Get the path to the global messaging config file.
  */
 export function getGlobalConfigPath(): string {
-  return path.join(COMMON_ROOT, GLOBAL_CONFIG_FILE);
+  return path.join(resolveCommonRoot(), GLOBAL_CONFIG_FILE);
 }
 
 /**

@@ -8,6 +8,18 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "handover-self-test-"));
 const rosterFile = path.join(tempDir, "roster.md");
 const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "handover-self-common-test-"));
 
+// Lazy resolution (D1/D4): this suite does not mock domain/constants, so the
+// COMMON_PATH env must point at the test's common dir before any writeMail.
+const originalCommonPath = process.env.COMMON_PATH;
+process.env.COMMON_PATH = commonDir;
+
+afterAll(() => {
+  if (originalCommonPath !== undefined) process.env.COMMON_PATH = originalCommonPath;
+  else delete process.env.COMMON_PATH;
+  fs.rmSync(tempDir, { recursive: true, force: true });
+  fs.rmSync(commonDir, { recursive: true, force: true });
+});
+
 jest.mock("../repositories/projects-repo", () => ({
   getProject: () => ({
     name: "TEST",

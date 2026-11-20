@@ -7,14 +7,13 @@ const commonDir = fs.mkdtempSync(path.join(os.tmpdir(), "activity-log-common-"))
 const rosterFile = path.join(tempDir, "roster.md");
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: commonDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => commonDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
   MESSAGE_FORMAT: "HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body",
   HUMAN_HANDLE: "HUMAN",
-  getCommonRoot: () => commonDir,
 }));
 
 jest.mock("../repositories/projects-repo", () => ({
@@ -88,13 +87,13 @@ describe("activity-log", () => {
     expect(first[4]).toHaveLength(80);
     expect(first[5]).toBe("MAILEXPORT");
 
-    // The embedded newline is flattened — the entry stays one physical line.
+    // The embedded newline is flattened â€” the entry stays one physical line.
     const second = lines[1].split("\t");
     expect(second).toHaveLength(6);
     expect(second[4]).toBe("line1 line2");
     expect(second[5]).toBe("OTHER");
 
-    // The tab / CR are flattened — still exactly 6 fields.
+    // The tab / CR are flattened â€” still exactly 6 fields.
     const third = lines[2].split("\t");
     expect(third).toHaveLength(6);
     expect(third[4]).toBe("a b c");

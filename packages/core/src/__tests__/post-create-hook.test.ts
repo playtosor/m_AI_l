@@ -5,14 +5,14 @@ import os from "os";
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "test-hook-"));
 
 jest.mock("../domain/constants", () => ({
-  PROJECT_ROOT: tempDir,
-  COMMON_ROOT: tempDir,
+  resolveProjectRoot: () => tempDir,
+  resolveCommonRoot: () => tempDir,
   SENTINEL: "<!-- END -->",
   ROSTER_FILE: "roster.md",
   PROJECTS_FILE: "projects_config.md",
   MESSAGE_FORMAT: "HANDLE // YYYYMMDD-HHMM // PRIORITY // SUBJECT // Body",
   HUMAN_HANDLE: "HUMAN",
-  // V3.0 BAC 2A — S1: allowlist is read by post-create-hook; preserve real values
+  // V3.0 BAC 2A â€” S1: allowlist is read by post-create-hook; preserve real values
   // so calls to `isCommandAllowed("node")` succeed in the test.
   POST_CREATE_HOOK_ALLOWLIST: ["node", "bash", "cmd", "pwsh", "sh"],
   POST_CREATE_HOOK_ENV_ALLOWLIST: ["PATH", "PATHEXT", "SYSTEMROOT", "TEMP", "TMP", "HOME", "USERPROFILE", "LANG", "LC_ALL"],

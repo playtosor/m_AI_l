@@ -1,15 +1,17 @@
 {
   "name": "@m_ai_l/mcp",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "m_AI_l MCP server + tools",
   "main": "dist/server.bundle.js",
   "types": "dist/server.d.ts",
   "files": [
     "dist/server.bundle.js",
-    "dist/server.d.ts"
+    "dist/server.d.ts",
+    "cli/activity-feed.js"
   ],
   "bin": {
-    "m-ai-l-mcp": "dist/server.bundle.js"
+    "m-ai-l-mcp": "dist/server.bundle.js",
+    "m-ai-l-activity-feed": "cli/activity-feed.js"
   },
   "scripts": {
     "build": "tsc",

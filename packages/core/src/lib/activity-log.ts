@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 import { writeFileAtomic } from "./fs-atomic";
-import { COMMON_ROOT } from "../domain/constants";
+import { resolveCommonRoot } from "../domain/constants";
 
 export interface ActivityLogEntry {
   timestamp: string;
@@ -29,7 +29,7 @@ function flattenField(value: string): string {
  * every project writes to the same feed consumed by the console.
  */
 export function getActivityLogPath(): string {
-  return path.join(COMMON_ROOT, ACTIVITY_LOG_FILE);
+  return path.join(resolveCommonRoot(), ACTIVITY_LOG_FILE);
 }
 
 /**

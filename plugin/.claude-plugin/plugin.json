@@ -1,0 +1,25 @@
+{
+    "name":  "m-ai-l-mailbox",
+    "description":  "m_AI_l project mailbox: MCP messaging server + read/write skills for multi-agent communication",
+    "version":  "1.0.0",
+    "license":  "Apache-2.0",
+    "author":  "playtosor",
+    "homepage":  "https://github.com/playtosor/m_AI_l",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "https://github.com/playtosor/m_AI_l.git",
+                       "directory":  "Vibe/mcp_server/plugin"
+                   },
+    "mcpServers":  {
+                       "m-ai-l":  {
+                                      "command":  "npx",
+                                      "args":  [
+                                                   "-y",
+                                                   "-p",
+                                                   "@m_ai_l/mcp",
+                                                   "m-ai-l-mcp"
+                                               ]
+                                  }
+                   },
+    "skills":  "./skills"
+}
